@@ -563,10 +563,16 @@ function ubiq_save_input() {
 
 function ubiq_load_input() {
 	cmd = ubiq_input();
-    if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
-        lastCmd = result.lastCmd || "";
-        cmd.value = lastCmd;
-        cmd.select();
+    if (typeof chrome === 'undefined' || !chrome.storage)
+        return;
+
+    return new Promise(function(resolve, reject) {
+        chrome.storage.local.get('lastCmd', function(result) {
+            lastCmd = result.lastCmd || "";
+            cmd.value = lastCmd;
+            cmd.select();
+            return resolve();
+        });
     });
 }
 
