@@ -737,54 +737,40 @@ CmdUtils.CreateCommand({
     <a href="http://www.microsofttranslator.com">Bing Translator</a> toolbar.\
   ',
     author: "based on original ubiquity translate command",
-    execute: async function translate_execute({input: text, _selection: _selection}) {
-        var words = text.split(/\s+/);
-        var dest = 'en';
-
-        if (words.length >= 3 && words[words.length - 2].toLowerCase() == 'to') {
-            dest = words.pop();
-            words.pop();
-            text = words.join('');
+    options: {
+        from: { type: "string" },
+        to: { type: "string", def: "en" },
+    },
+    execute: async function translate_execute(obj) {
+        if (obj.input.length === 0 || obj.input.length > MS_TRANSLATOR_LIMIT) {
+            pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
+            return;
         }
-
-        if (text && text.length <= MS_TRANSLATOR_LIMIT) {
-            var T = await msTranslator("Translate", {
-                contentType: "text/html",
-                text: text,
-                from: "",
-                to: dest
-            });
-            if (T[0] = '"') T.split("").slice(1, -1).join("");
-            if (typeof isSelected !== 'undefined' && _selection == true) {
-                CmdUtils.setSelection(T);
-                CmdUtils.closePopup();
-            }
-        } else {
-            CmdUtils.setPreview("text is too short or too long. try translating <a target=_blank href=https://www.bing.com/translator/>manually</a>");
+        var T = await msTranslator("Translate", {
+            contentType: "text/html",
+            text: obj.input,
+            from: obj.from || "",
+            to: obj.to
+        });
+        if (T[0] = '"') T.split("").slice(1, -1).join("");
+        if (obj._selection == true) {
+            CmdUtils.setSelection(T);
+            CmdUtils.closePopup();
         }
     },
-    preview: async function translate_preview(pblock, {input: text}) {
-        var words = text.split(/\s+/);
-        var dest = 'en';
-
-        if (words.length >= 3 && words[words.length - 2].toLowerCase() == 'to') {
-            dest = words.pop();
-            words.pop();
-            text = words.join(' ');
+    preview: async function translate_preview(pblock, obj) {
+        if (obj.input.length === 0 || obj.input.length > MS_TRANSLATOR_LIMIT) {
+            pblock.innerHTML = "text is too short or too long<BR><BR>[" + obj.input + "]";
+            return;
         }
-
-        if (text && text.length <= MS_TRANSLATOR_LIMIT) {
-            var T = await msTranslator("Translate", {
-                contentType: "text/html",
-                text: text,
-                from: "",
-                to: dest
-            });
-            if (T[0] = '"') T.split("").slice(1, -1).join("");
-            CmdUtils.setPreview(T);
-        } else {
-            pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
-        }
+        var T = await msTranslator("Translate", {
+            contentType: "text/html",
+            text: obj.input,
+            from: obj.from || "",
+            to: obj.to
+        });
+        if (T[0] = '"') T.split("").slice(1, -1).join("");
+        CmdUtils.setPreview(T);
     },
 });
 
