@@ -1,7 +1,7 @@
 // CmdUtils
-// jshint esversion: 6 
+// jshint esversion: 6
 
-if (!CmdUtils) var CmdUtils = { 
+if (!CmdUtils) var CmdUtils = {
     VERSION: chrome.runtime.getManifest().version,
     DEBUG: false,
     CommandList: [],
@@ -9,7 +9,7 @@ if (!CmdUtils) var CmdUtils = {
     backgroundWindow: window,
     popupWindow: null,
     log: console.log,
-    active_tab: null,   // tab that is currently active, updated via background.js 
+    active_tab: null,   // tab that is currently active, updated via background.js
     pageData: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
     setResult: function setResult(message, prepend) { console.log(message); },
@@ -38,25 +38,25 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
     //console.log("command created ", args.name);
     var to = parseFloat(args.timeout || 0);
     if (to>0) {
-    	args.timeoutFunc = null;
-    	if (typeof args.preview == 'function') {
-		    args.preview_timeout = args.preview;
-			args.preview = function(b,a) {
+        args.timeoutFunc = null;
+        if (typeof args.preview == 'function') {
+            args.preview_timeout = args.preview;
+            args.preview = function(b,a) {
                 if (args.preview_timeoutFunc !== null) clearTimeout(args.preview_timeoutFunc);
-                args.preview_timeoutFunc = setTimeout(function () { 
-                	args.preview_timeout(b, a); 
+                args.preview_timeoutFunc = setTimeout(function () {
+                    args.preview_timeout(b, a);
                 }, to);
-			};
-    	}
-    	if (typeof args.execute == 'function') {
-		    args.execute_timeout = args.execute;
-			args.execute = function(a) {
+            };
+        }
+        if (typeof args.execute == 'function') {
+            args.execute_timeout = args.execute;
+            args.execute = function(a) {
                 if (args.execute_timeoutFunc !== null) clearTimeout(args.execute_timeoutFunc);
                 args.execute_timeoutFunc = setTimeout(function () {
-					args.execute_timeout(a);
+                    args.execute_timeout(a);
                 }, to);
-			};
-    	}
+            };
+        }
     }
     if (!("options" in args)) args.options = {};
 
@@ -140,7 +140,7 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {input:
       url += '#'+hashanch[0];
     }
     var zoom = this.prevAttrs.zoom || 0.85;
-    //pblock.style.overflow = 'hidden'; 
+    //pblock.style.overflow = 'hidden';
     var doc = pblock.ownerDocument;
     var wnd = doc.defaultView || doc.parentWindow;
     if (wnd._ubi_prevTO != null) {
@@ -156,7 +156,7 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {input:
       wnd.addEventListener("blur", CmdUtils._restoreFocusToInput, { capture: true });
       wnd._ubiq_recent_cmd = self;
       // parent block in order to handle scroll ("cross origin" issue) and to provide zoom
-      pblock.innerHTML = 
+      pblock.innerHTML =
     '<div id="ubiq-preview-div" style="--zoom:'+ zoom +'">'+ code +'</div>';
       pblock = pblock.lastChild;
       // scrollTo in frame cross origin not allowed in some browsers - scroll later inside parent div:
@@ -170,11 +170,11 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {input:
        ' style="--scrollX:'+ scrollOffs[0] +'px; --scrollY:'+ scrollOffs[1] +'px; "'+
        ' src="' + url + '"/>';
       var ifrm = pblock.lastChild;
-      ifrm.onload = function() { 
-        (CmdUtils._afterLoadPreview.bind(self))(pblock.lastChild); 
+      ifrm.onload = function() {
+        (CmdUtils._afterLoadPreview.bind(self))(pblock.lastChild);
       };
       // zoom overflow dirty fix
-      CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "hidden"); 
+      CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "hidden");
       if (scrollOffs[0] || scrollOffs[1]) {
         wnd.setTimeout(function() {
           pblock.scrollLeft = scrollOffs[0];
@@ -186,59 +186,59 @@ CmdUtils._searchCommandPreview = function _searchCommandPreview( pblock, {input:
 
 // closes current tab
 CmdUtils.closeTab = function closeTab() {
-	chrome.tabs.query({active:true,currentWindow:true},function(tabs){
-        if (tabs && tabs[0]) 
+    chrome.tabs.query({active:true,currentWindow:true},function(tabs){
+        if (tabs && tabs[0])
             chrome.tabs.remove(tabs[0].id, function() { });
-        else 
+        else
             console.error("closeTab failed because 'tabs' is not set");
-	});
+    });
 };
 
 // returns active tabs URL if avaiable
 CmdUtils.getLocation = function getLocation() {
     if (CmdUtils.active_tab && CmdUtils.active_tab.tab.url)
         return CmdUtils.active_tab.tab.url;
-    else 
-        return ""; 
+    else
+        return "";
 };
 
 // opens new tab with provided url
 CmdUtils.addTab = function addTab(url) {
-	if (typeof browser !== 'undefined') {
-		browser.tabs.create({ "url": url });
-	} else 
-	if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
-		chrome.tabs.create({ "url": url });
-	} else {
-		window.open(url);
-	}
+    if (typeof browser !== 'undefined') {
+        browser.tabs.create({ "url": url });
+    } else
+    if (typeof chrome !== 'undefined' && typeof chrome.tabs !== 'undefined') {
+        chrome.tabs.create({ "url": url });
+    } else {
+        window.open(url);
+    }
 };
 
 // opens new tab with post request and provided data
 CmdUtils.postNewTab
  = function postNewTab(url, data) {
-	var form = document.createElement("form");
-	form.setAttribute("method", "post");
-	form.setAttribute("action", url);
-	form.setAttribute("target", "_blank");
+    var form = document.createElement("form");
+    form.setAttribute("method", "post");
+    form.setAttribute("action", url);
+    form.setAttribute("target", "_blank");
 
-	if (typeof data === 'string') data = Utils.urlToParams(data);
-	for (var i in data) {
-		if (data.hasOwnProperty(i)) {
-			var input = document.createElement('input');
-			input.type = 'hidden';
-			input.name = i;
-			input.value = data[i];
-			form.appendChild(input);
-		}
-	}
+    if (typeof data === 'string') data = Utils.urlToParams(data);
+    for (var i in data) {
+        if (data.hasOwnProperty(i)) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = i;
+            input.value = data[i];
+            form.appendChild(input);
+        }
+    }
 
-	document.body.appendChild(form);
-	form.submit();
-	document.body.removeChild(form);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
 
-// returns a function that opens new tab with substituted {text} and {location} 
+// returns a function that opens new tab with substituted {text} and {location}
 CmdUtils.SimpleUrlBasedCommand = function SimpleUrlBasedCommand(url) {
     if (!url) return;
     var search_func = function(directObj) {
@@ -283,45 +283,45 @@ CmdUtils.ajaxGet = function ajaxGet(url, callback) {
     xhr.send();
 };
 
-// performs jQuery get and returns jqXHR that implements Promise 
+// performs jQuery get and returns jqXHR that implements Promise
 CmdUtils.get = function get(url) {
-	return jQuery.ajax({
-    	url: url,
+    return jQuery.ajax({
+        url: url,
         async: true
-	});
+    });
 };
 
 // performs jQuery post and return jsXHR
 CmdUtils.post = function post(url, data) {
-	return jQuery.ajax({
-    	url: url,
-    	data: data,
+    return jQuery.ajax({
+        url: url,
+        data: data,
         async: true
-	});
+    });
 };
 
 // loads remote scripts into specified window (or backround if not specified)
 CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
     // this array will hold all loaded scripts into this window
     wnd.loadedScripts = wnd.loadedScripts || [];
-	url = url || [];
-	if (url.constructor === String) url = [url];
+    url = url || [];
+    if (url.constructor === String) url = [url];
 
     if (typeof wnd.jQuery === "undefined") {
         console.error("there's no jQuery at "+wnd+".");
         return false;
     }
-	if (url.length == 0) 
-		return callback();
+    if (url.length == 0)
+        return callback();
 
-	var thisurl = url.shift();
-	tempfunc = function(data, textStatus, jqXHR) {
-		return loadScripts(url, callback, wnd);
-	};
-	if (wnd.loadedScripts.indexOf(thisurl)==-1) {
-		console.log("loading :::: ", thisurl);
-		wnd.loadedScripts.push(thisurl);
-    	wnd.jQuery.ajax({
+    var thisurl = url.shift();
+    tempfunc = function(data, textStatus, jqXHR) {
+        return loadScripts(url, callback, wnd);
+    };
+    if (wnd.loadedScripts.indexOf(thisurl)==-1) {
+        console.log("loading :::: ", thisurl);
+        wnd.loadedScripts.push(thisurl);
+        wnd.jQuery.ajax({
             url: thisurl,
             dataType: 'script',
             success: tempfunc,
@@ -329,7 +329,7 @@ CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
         });
     }
     else {
-    	tempfunc();
+        tempfunc();
     }
 };
 
@@ -393,19 +393,19 @@ CmdUtils.setSelection = function setSelection(s) {
     replaceSelectedText("`+s+`");`;
     if (CmdUtils.active_tab && CmdUtils.active_tab.tab.id)
         return chrome.tabs.executeScript( CmdUtils.active_tab.tab.id, { code: insertCode } );
-    else 
+    else
         return chrome.tabs.executeScript( { code: insertCode } );
 };
 
 // for measuring time the input is changed
 CmdUtils.inputUpdateTime = performance.now();
 CmdUtils.timeSinceInputUpdate = function timeSinceInputUpdate() {
-	return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
+    return (performance.now() - CmdUtils.inputUpdateTime)*0.001;
 };
 
 // returns command with this name
 CmdUtils.getcmd = function getcmd(cmdname) {
-    for (var c in CmdUtils.CommandList) 
+    for (var c in CmdUtils.CommandList)
         if (CmdUtils.CommandList[c].name == cmdname || CmdUtils.CommandList[c].names.indexOf(cmdname)>-1) return CmdUtils.CommandList[c];
     return null;
 };
@@ -425,7 +425,7 @@ CmdUtils.unloadCustomScripts = function unloadCustomScripts() {
     CmdUtils.CommandList = CmdUtils.CommandList.filter((c)=>{
         return c['builtIn']==true;
     });
-    
+
 }
 
 CmdUtils.loadCustomScripts = function loadCustomScripts() {
@@ -435,15 +435,15 @@ CmdUtils.loadCustomScripts = function loadCustomScripts() {
 
     // load custom scripts
     chrome.storage.local.get('customscripts', function(result) {
-    	try {
-    		eval(result.customscripts || "");
-    	} catch (e) {
-    		console.error("custom scripts eval failed", e);
-    	}
+        try {
+            eval(result.customscripts || "");
+        } catch (e) {
+            console.error("custom scripts eval failed", e);
+        }
     });
 };
 
-// show browser notification with simple limiter 
+// show browser notification with simple limiter
 CmdUtils.lastNotification = "";
 CmdUtils.notify = function (message, title) {
     if (CmdUtils.lastNotification == title+"/"+message) return;

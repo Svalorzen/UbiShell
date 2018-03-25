@@ -62,11 +62,11 @@ function ubiq_show_preview(parsed) {
     switch(typeof preview_func)
     {
     case 'undefined':
-        	ubiq_set_preview( cmd_struct.description );
-        	break;
+            ubiq_set_preview( cmd_struct.description );
+            break;
     case 'string':
             ubiq_set_preview( preview_func );
-        	break;
+            break;
     default:
         var pfunc = ()=>{
             // zoom overflow dirty fix
@@ -82,9 +82,9 @@ function ubiq_show_preview(parsed) {
             }
         }
 
-		if (typeof cmd_struct.require !== 'undefined')
-	        CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
-	    else
+        if (typeof cmd_struct.require !== 'undefined')
+            CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
+        else
             if (typeof cmd_struct.requirePopup !== 'undefined')
                 CmdUtils.loadScripts( cmd_struct.requirePopup, ()=>{ pfunc(); }, window );
             else
@@ -510,9 +510,9 @@ function ubiq_show_matching_commands(text) {
 }
 
 function ubiq_keyup_handler(evt) {
-	// measure the input
-	CmdUtils.inputUpdateTime = performance.now();
-	ubiq_save_input();
+    // measure the input
+    CmdUtils.inputUpdateTime = performance.now();
+    ubiq_save_input();
 
     if (evt) {
         var kc = evt.keyCode;
@@ -557,7 +557,7 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_save_input() {
-	var cmd = ubiq_input().value;
+    var cmd = ubiq_input().value;
 
     ubiq_input_changed = cmd.trim() !== ubiq_last_command.trim();
     ubiq_last_command = cmd;
@@ -566,7 +566,7 @@ function ubiq_save_input() {
 }
 
 function ubiq_load_input() {
-	var cmd = ubiq_input();
+    var cmd = ubiq_input();
     if (typeof chrome === 'undefined' || !chrome.storage)
         return;
 

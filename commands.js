@@ -1,5 +1,5 @@
 // BuildIn CmdUtils command definitions
-// jshint esversion: 6 
+// jshint esversion: 6
 
 CmdUtils.CreateCommand({
     name: "amazon-search",
@@ -301,7 +301,7 @@ CmdUtils.CreateCommand({
     license: "",
     preview: async function define_preview(pblock, {input: text}) {
         pblock.innerHTML = "Searches for movies on IMDb";
-        if (text.trim()!="") 
+        if (text.trim()!="")
         // jQuery(pblock).load("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList")
         // .blankify("http://imdb.com");
         jQuery(pblock).loadAbs("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr table.findList");
@@ -389,18 +389,18 @@ CmdUtils.CreateCommand({
     },
     preview: async function mapsPreview(previewBlock, args) {
         var GM = CmdUtils.popupWindow.google.maps;
-        
+
         // http://jsfiddle.net/user2314737/u9no8te4/
         var from = args.input || args.from;
         if (!from) {
-            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place] [-l]\n\tmaps -from [start] -to [finish] [-l]\n\n</pre><pre>-l</pre> narrow search to your location"; 
+            previewBlock.innerHTML = "show objects or routes on google maps.<p>syntax: <pre>\tmaps [place] [-l]\n\tmaps -from [start] -to [finish] [-l]\n\n</pre><pre>-l</pre> narrow search to your location";
             return;
         }
         cc = "";
         if (args.l) {
-	        var geoIP = await CmdUtils.get("http://freegeoip.net/json/"); // search locally
-    	    var cc = geoIP.country_code || "";
-        	cc = cc.toLowerCase();
+            var geoIP = await CmdUtils.get("http://freegeoip.net/json/"); // search locally
+            var cc = geoIP.country_code || "";
+            cc = cc.toLowerCase();
         }
         var dest = args.to;
         var A = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(from)+"&polygon_geojson=1&viewbox=&format=json&countrycodes="+cc);
@@ -408,7 +408,7 @@ CmdUtils.CreateCommand({
         CmdUtils.deblog("A",A[0]);
         previewBlock.innerHTML = '<div id="map-canvas" style="width:540px;height:505px"></div>';
 
-    	var pointA = new GM.LatLng(A[0].lat, A[0].lon);
+        var pointA = new GM.LatLng(A[0].lat, A[0].lon);
         var myOptions = {
             zoom: 10,
             center: pointA
@@ -424,7 +424,7 @@ CmdUtils.CreateCommand({
         map.data.addGeoJson(geoJson = {"type": "FeatureCollection", "features": [{ "type": "Feature", "geometry": A[0].geojson, "properties": {} }]});
         if (dest) {
             var B = await CmdUtils.get("https://nominatim.openstreetmap.org/search.php?q="+encodeURIComponent(dest)+"&polygon_geojson=1&viewbox=&format=json");
-            if (!B[0]) { 
+            if (!B[0]) {
                 map.fitBounds( new GM.LatLngBounds( new GM.LatLng(A[0].boundingbox[0],A[0].boundingbox[2]), new GM.LatLng(A[0].boundingbox[1],A[0].boundingbox[3]) ) );
                 map.setZoom(map.getZoom()-1);
                 return;
@@ -903,23 +903,23 @@ CmdUtils.CreateCommand({
     icon: "https://png.icons8.com/metro/50/000000/calculator.png",
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
     preview: pr = function preview(previewBlock, {input:text}) {
-    	if (text.trim()!='') {
-    		var m = new math.parser();
-    		text = text.replace(",",".");
-    		text = text.replace(" ","");
-	        previewBlock.innerHTML = m.eval(text);
-	        //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
-	    }
-		else
-	        previewBlock.innerHTML = desc;
+        if (text.trim()!='') {
+            var m = new math.parser();
+            text = text.replace(",",".");
+            text = text.replace(" ","");
+            previewBlock.innerHTML = m.eval(text);
+            //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
+        }
+        else
+            previewBlock.innerHTML = desc;
     },
-    execute: function ({input:text}) { 
-    	if (text.trim()!='') {
-    		var m = new math.parser();
-    		text = text.replace(",",".");
-    		text = text.replace(" ","");
+    execute: function ({input:text}) {
+        if (text.trim()!='') {
+            var m = new math.parser();
+            text = text.replace(",",".");
+            text = text.replace(" ","");
             text = m.eval(text);
-            CmdUtils.setSelection(text); 
+            CmdUtils.setSelection(text);
         }
     }
 });
@@ -928,8 +928,8 @@ CmdUtils.CreateCommand({
     name: "edit-ubiquity-commands",
     icon: "res/icon-128.png",
     description: "Takes you to the Ubiquity command <a href=options.html target=_blank>editor page</a>.",
-    execute: function () { 
-    	chrome.runtime.openOptionsPage();
+    execute: function () {
+        chrome.runtime.openOptionsPage();
     }
 });
 
@@ -996,28 +996,28 @@ CmdUtils.CreateCommand({
     execute: function execute(){
         chrome.tabs.executeScript({code:`
         javascript: (
-            function () { 
+            function () {
             // the css we are going to inject
             var css = 'html {-webkit-filter: invert(100%);' +
-                '-moz-filter: invert(100%);' + 
-                '-o-filter: invert(100%);' + 
+                '-moz-filter: invert(100%);' +
+                '-o-filter: invert(100%);' +
                 '-ms-filter: invert(100%); }',
-            
+
             head = document.getElementsByTagName('head')[0],
             style = document.createElement('style');
-            
+
             // a hack, so you can "invert back" clicking the bookmarklet again
             if (!window.counter) { window.counter = 1;} else  { window.counter ++;
             if (window.counter % 2 == 0) { var css ='html {-webkit-filter: invert(0%); -moz-filter:    invert(0%); -o-filter: invert(0%); -ms-filter: invert(0%); }'}
              };
-            
+
             style.type = 'text/css';
             if (style.styleSheet){
             style.styleSheet.cssText = css;
             } else {
             style.appendChild(document.createTextNode(css));
             }
-            
+
             //injecting the css to the head
             head.appendChild(style);
 
@@ -1034,9 +1034,9 @@ CmdUtils.CreateCommand({
         `})
     },
 });
-// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
-// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
-// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  - 
+// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -
+// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -
+// - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -  - -  -
 
 // mark built-int commands
 CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
@@ -1045,11 +1045,11 @@ CmdUtils.CommandList.forEach((c)=>{c['builtIn']=true;});
 if (typeof chrome!=='undefined')
 if (chrome.storage)
 chrome.storage.local.get('customscripts', function(result) {
-	try {
-		eval(result.customscripts || "");
-	} catch (e) {
-		console.error("custom scripts eval failed", e);
-	}
+    try {
+        eval(result.customscripts || "");
+    } catch (e) {
+        console.error("custom scripts eval failed", e);
+    }
 });
 
 CmdUtils.CreateCommand({
