@@ -10,8 +10,7 @@ if (!CmdUtils) var CmdUtils = {
     popupWindow: null,
     log: console.log,
     active_tab: null,   // tab that is currently active, updated via background.js 
-    selectedText: "",   // currently selected text, update via content script selection.js
-    selectedHTML: "",   // currently selected text, update via content script selection.js
+    pageData: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
     setResult: function setResult(message, prepend) { console.log(message); },
 };
@@ -195,8 +194,8 @@ CmdUtils.closeTab = function closeTab() {
 
 // returns active tabs URL if avaiable
 CmdUtils.getLocation = function getLocation() {
-    if (CmdUtils.active_tab && CmdUtils.active_tab.url) 
-        return CmdUtils.active_tab.url;
+    if (CmdUtils.active_tab && CmdUtils.active_tab.tab.url)
+        return CmdUtils.active_tab.tab.url;
     else 
         return ""; 
 };
@@ -332,25 +331,31 @@ CmdUtils.loadScripts = function loadScripts(url, callback, wnd=window) {
     }
 };
 
-// updates selectedText variable
-CmdUtils.updateSelection = function (tab_id) {
-    chrome.tabs.executeScript( tab_id, { code: "window ? window.getSelection().toString() : '';" }, function(selection) {
-        if (selection && selection.length>0) CmdUtils.selectedText = selection[0] || "";
-        CmdUtils.deblog("selectedText is ", CmdUtils.selectedText);  
+CmdUtils.getPageObject = function getPageObject() {
+    return new Promise(function(resolve, reject) {
+        chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if (chrome.runtime.lastError || tabs.length == 0) {
+                console.log("No active tabs.");
+                return resolve(null);
+            }
+
+            chrome.tabs.sendMessage(tabs[0].id, {}, function(response) {
+                if (chrome.runtime.lastError || response === undefined) {
+                    console.log("Received no response from active tab");
+                    return resolve(null);
+                }
+
+                response.tab = tabs[0];
+                return resolve(response);
+            });
+        });
     });
 };
 
 // called when tab is switched or changed, updates selectedText and activeTab
-CmdUtils.updateActiveTab = function () {
+CmdUtils.updateActiveTab = async function () {
     CmdUtils.active_tab = null;
-    CmdUtils.selectedText = '';
-    if (chrome.tabs && chrome.tabs.getSelected)
-    chrome.tabs.getSelected(null, function(tab) {
-        if (tab.url.match('^https?://')){
-            CmdUtils.active_tab = tab;
-            CmdUtils.updateSelection(tab.id);
-        }
-    });
+    CmdUtils.active_tab = await CmdUtils.getPageObject();
 };
 
 // replaces current selection with string provided
@@ -384,8 +389,8 @@ CmdUtils.setSelection = function setSelection(s) {
         }
     }
     replaceSelectedText("`+s+`");`;
-    if (CmdUtils.active_tab && CmdUtils.active_tab.id)
-        return chrome.tabs.executeScript( CmdUtils.active_tab.id, { code: insertCode } );
+    if (CmdUtils.active_tab && CmdUtils.active_tab.tab.id)
+        return chrome.tabs.executeScript( CmdUtils.active_tab.tab.id, { code: insertCode } );
     else 
         return chrome.tabs.executeScript( { code: insertCode } );
 };

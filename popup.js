@@ -101,8 +101,8 @@ function ubiq_basic_parse() {
     var input = words.join(' ').trim();
 
     var selection = false;
-    if (input === "") {
-        input = CmdUtils.selectedText.trim();
+    if (input === "" && CmdUtils.active_tab) {
+        input = CmdUtils.active_tab.selection.trim();
         selection = true;
     }
 
@@ -561,25 +561,26 @@ function ubiq_save_input() {
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
 }
 
-function ubiq_load_input(callback) {
+function ubiq_load_input() {
 	cmd = ubiq_input();
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.get('lastCmd', function(result) {
         lastCmd = result.lastCmd || "";
         cmd.value = lastCmd;
         cmd.select();
-        callback();
     });
 }
 
 
-$(window).on('load', function() {
+$(window).on('load', async function() {
     if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
         CmdUtils.setPreview = ubiq_set_preview;
         CmdUtils.setResult = ubiq_set_result;
         CmdUtils.popupWindow = window;
-        CmdUtils.updateActiveTab();
 
-        ubiq_load_input(()=>{ubiq_keyup_handler(null);});
+        await CmdUtils.updateActiveTab();
+
+        await ubiq_load_input();
+        ubiq_keyup_handler(null);
 
         // Add event handler to window
         document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
