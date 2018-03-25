@@ -509,49 +509,51 @@ function ubiq_show_matching_commands(text) {
     return;
 }
 
-function ubiq_keydown_handler(evt) {
+function ubiq_keyup_handler(evt) {
 	// measure the input
 	CmdUtils.inputUpdateTime = performance.now();
 	ubiq_save_input();
 
-    if (!evt) return;
-    var kc = evt.keyCode;
+    if (evt) {
+        var kc = evt.keyCode;
 
-    // On ENTER, execute the given command
-    if (kc == 13) {
-        ubiq_execute();
-        return;
-    }
-
-    // On TAB, try to autocomplete command
-    if (kc == 9) {
-        command = ubiq_complete_command();
-        if (command !== null) {
-            ubiq_input().value = command;
+        // On ENTER, execute the given command
+        if (kc == 13) {
+            ubiq_execute();
+            CmdUtils.closePopup();
+            return;
         }
-        ubiq_focus();
-        return;
+
+        // On TAB, try to autocomplete command
+        if (kc == 9) {
+            command = ubiq_complete_command();
+            if (command !== null) {
+                ubiq_input().value = command;
+            }
+            ubiq_focus();
+            return;
+        }
+
+        // On F5 restart extension
+        if (kc == 116) {
+            chrome.runtime.reload();
+            return;
+        }
+
+        // Ctrl+C copies preview to clipboard
+        if (kc == 67 && evt.ctrlKey) {
+            backgroundPage.console.log("copy to clip");
+            var el = ubiq_preview_el();
+            if (!el) return;
+            CmdUtils.setClipboard( el.innerText );
+        }
     }
 
-    // On F5 restart extension
-    if (kc == 116) {
-        chrome.runtime.reload();
-        return;
+    if (ubiq_input_changed) {
+        var parsed = ubiq_basic_parse();
+        ubiq_show_command_options(parsed);
+        ubiq_show_preview(parsed);
     }
-
-    // Ctrl+C copies preview to clipboard
-    if (kc == 67 && evt.ctrlKey) {
-        backgroundPage.console.log("copy to clip");
-        var el = ubiq_preview_el();
-        if (!el) return;
-        CmdUtils.setClipboard( el.innerText );
-    }
-}
-
-function ubiq_keyup_handler(evt) {
-    var parsed = ubiq_basic_parse();
-    ubiq_show_command_options(parsed);
-    ubiq_show_preview(parsed);
 }
 
 function ubiq_save_input() {
@@ -591,7 +593,6 @@ $(window).on('load', async function() {
         ubiq_keyup_handler(null);
 
         // Add event handler to window
-        document.addEventListener('keydown', function(e) { ubiq_keydown_handler(e); }, false);
         document.addEventListener('keyup', function(e) { ubiq_keyup_handler(e); }, false);
 
         console.log("hello from UbiChr");
