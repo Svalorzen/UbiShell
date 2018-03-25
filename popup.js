@@ -7,8 +7,8 @@
 // Original Ubiquity Project: http://labs.mozilla.org/ubiquity/
 // jshint esversion: 6
 
-var ubiq_selected_command = 0;
-var ubiq_first_match;
+var ubiq_last_command = "";
+var ubiq_input_changed = false;
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
@@ -555,12 +555,16 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_save_input() {
-	cmd = ubiq_input();
-    if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd.value });
+	var cmd = ubiq_input().value;
+
+    ubiq_input_changed = cmd.trim() !== ubiq_last_command.trim();
+    ubiq_last_command = cmd;
+
+    if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd });
 }
 
 function ubiq_load_input() {
-	cmd = ubiq_input();
+	var cmd = ubiq_input();
     if (typeof chrome === 'undefined' || !chrome.storage)
         return;
 
