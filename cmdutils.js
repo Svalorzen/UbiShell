@@ -58,6 +58,8 @@ CmdUtils.CreateCommand = function CreateCommand(args) {
 			};
     	}
     }
+    if (!("options" in args)) args.options = {};
+
     CmdUtils.CommandList.push(args);
 };
 
