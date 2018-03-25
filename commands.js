@@ -466,6 +466,45 @@ CmdUtils.CreateCommand({
 });
 
 CmdUtils.CreateCommand({
+    name: "grep",
+    description: "Search the current page for the given words",
+    preview: function preview(pblock, obj) {
+        function onlyUnique(value, index, self) {
+            return self.indexOf(value) === index;
+        }
+        if (!CmdUtils.active_tab) return;
+        var doc = CmdUtils.active_tab.document;
+
+        var search = obj.input;
+        if (search.match(/^\s*$/)) {
+            pblock.innerHTML = "";
+            return;
+        }
+        search = search.replace("***", "\\b(\\w*)\\b");
+        search = search.replace("___", "\\b(.*)\\b");
+        var text = doc.replace(/&nbsp;/g, ' ');
+        var regex = new RegExp(search, "gi");
+        var matches = [];
+        var match;
+        var counter = 50;
+        while ((counter-- > 0) && (match = regex.exec(text))) {
+            if (match.length == 1)
+                match = match[0];
+            else
+                match = match[1];
+            if (match != "")
+                matches.push(match);
+        }
+        if (matches.length == 0) {
+            pblock.innerHTML = "No matches."
+            return;
+        }
+        matches = matches.filter(onlyUnique);
+        pblock.innerHTML = matches.join("<br>");
+    }
+});
+
+CmdUtils.CreateCommand({
     name: "msn-search",
     description: "Search MSN for the given words",
     author: {},
