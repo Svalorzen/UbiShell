@@ -377,6 +377,7 @@ function ubiq_complete_command(text) {
 }
 
 function ubiq_show_command_options(pipeVals, parsed) {
+    ubiq_clear_command_options();
     if (!pipeVals || !parsed) return;
 
     var cmd_struct = parsed._cmd;
@@ -420,6 +421,10 @@ function ubiq_show_command_options(pipeVals, parsed) {
 
     options_div.appendChild(options_list);
     ubiq_result_el().innerHTML = options_div.innerHTML;
+}
+
+function ubiq_clear_command_options() {
+    ubiq_result_el().innerHTML = "";
 }
 
 // will also call preview
@@ -556,9 +561,11 @@ function ubiq_keyup_handler(evt) {
             command = ubiq_complete_command();
             if (command !== null) {
                 ubiq_input().value = command;
+                ubiq_input_changed = true;
             }
             ubiq_focus();
-            return;
+
+            if (!ubiq_input_changed) return;
         }
 
         // On F5 restart extension
