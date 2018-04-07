@@ -600,7 +600,7 @@ function ubiq_keyup_handler(evt) {
             command = ubiq_complete_command();
             if (command !== null) {
                 ubiq_input().value = command;
-                ubiq_input_changed = true;
+                ubiq_input_changed = ubiq_save_input();
             }
             ubiq_focus();
 
