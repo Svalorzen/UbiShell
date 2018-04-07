@@ -465,15 +465,22 @@ CmdUtils.CreateCommand({
     }
 });
 
+function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+}
 CmdUtils.CreateCommand({
     name: "grep",
     description: "Search the current page for the given words",
+    options: {
+        in: { type: "string" },
+    },
     preview: function preview(pblock, obj) {
-        function onlyUnique(value, index, self) {
-            return self.indexOf(value) === index;
+        var doc;
+        if (obj.in) doc = obj.in;
+        else {
+            if (!CmdUtils.active_tab) return;
+            doc = CmdUtils.active_tab.documentText;
         }
-        if (!CmdUtils.active_tab) return;
-        var doc = CmdUtils.active_tab.documentText;
 
         var search = obj.input;
         if (search.match(/^\s*$/)) {
@@ -495,12 +502,45 @@ CmdUtils.CreateCommand({
             if (match != "")
                 matches.push(match);
         }
+        matches = matches.filter(onlyUnique);
         if (matches.length == 0) {
             pblock.innerHTML = "No matches."
+        } else {
+            pblock.innerHTML = matches.join("<br>");
+        }
+    },
+    output: function output(obj) {
+        var doc;
+        if (obj.in) doc = obj.in;
+        else {
+            if (!CmdUtils.active_tab) return;
+            doc = CmdUtils.active_tab.documentText;
+        }
+
+        var search = obj.input;
+        if (search.match(/^\s*$/)) {
+            pblock.innerHTML = "";
             return;
         }
+        search = search.replace("***", "\\b(\\w*)\\b");
+        search = search.replace("___", "\\b(.*)\\b");
+        var text = doc.replace(/&nbsp;/g, ' ');
+        var regex = new RegExp(search, "gi");
+        var matches = [];
+        var match;
+        var counter = 50;
+        while ((counter-- > 0) && (match = regex.exec(text))) {
+            if (match.length == 1)
+                match = match[0];
+            else
+                match = match[1];
+            if (match != "")
+                matches.push(match);
+        }
         matches = matches.filter(onlyUnique);
-        pblock.innerHTML = matches.join("<br>");
+        if (matches.length > 0)
+            return {"matches": matches};
+        return {};
     }
 });
 
