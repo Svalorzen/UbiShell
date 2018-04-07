@@ -473,7 +473,7 @@ CmdUtils.CreateCommand({
             return self.indexOf(value) === index;
         }
         if (!CmdUtils.active_tab) return;
-        var doc = CmdUtils.active_tab.document;
+        var doc = CmdUtils.active_tab.documentText;
 
         var search = obj.input;
         if (search.match(/^\s*$/)) {

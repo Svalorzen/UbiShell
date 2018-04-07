@@ -1,7 +1,8 @@
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
         sendResponse({
-            "document": document.body.innerHTML,
+            "documentText": document.body.innerText,
+            "documentHtml": document.body.innerHTML,
             "selection": window.getSelection().toString(),
         });
     }
