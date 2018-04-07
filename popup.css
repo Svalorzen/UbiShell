@@ -34,7 +34,7 @@ pre {
 }
 
 #ubiq_input {
-    border: 0px; 
+    border: 0px;
     border-bottom: 1px outset gray;
     width: 100%;
     height: 100%;
@@ -52,8 +52,8 @@ pre {
 }
 
 #ubiq_input:focus {
-	color:black;
-}        
+    color:black;
+}
 
 #ubiq-command-tip, #ubiq-command-preview, #ubiq-results-panel {
     border: 0;
@@ -64,7 +64,7 @@ pre {
     height: 100%;
 }
 #ubiq-command-panel {
-    width: 540px; 
+    width: 540px;
     height: 100%;
     vertical-align: top;
 }
@@ -72,14 +72,14 @@ pre {
 #ubiq-command-tip {
     color: #ddd;
     font-style: italic;
-    width: 540px; 
+    width: 540px;
     height: 0px;
 }
 
 #ubiq-command-preview {
     color: #ddd;
     /* width: 540px;  */
-    width: 100%; 
+    width: 100%;
     height: 505px;
     position: relative;
     /* overflow-y: auto; */
@@ -100,13 +100,13 @@ pre {
     width: calc(100% / var(--zoom)) !important;
     height: calc(100% / var(--zoom)) !important;
     height: 100%;
-    overflow: hidden; 
+    overflow: hidden;
     position: relative; border:0px;
 }
 #ubiq-preview-div #ubiq-preview-frm {
     --scrollX: 0px;
     --scrollY: 0px;
-    width: calc(100%  + var(--scrollX)) !important; 
+    width: calc(100%  + var(--scrollX)) !important;
     height: calc(100% + var(--scrollY)) !important;
     background-color: transparent;
     border: 0px;
@@ -122,57 +122,61 @@ pre {
     text-align: left;
     color: white;
 }
-/* 
+/*
 #ubiq-result-panel.result {
     padding-left: 4pt;
     padding-right: 4pt;
 }
  */
 #ubiq-result-panel ul {
-	padding:0; 
-	margin:0;
-    width: 100%; 
+    padding:0;
+    margin:0;
+    width: 100%;
     height: 100%;
 }
 
 #ubiq-result-panel li {
-	color: black; 
-	list-style: none; 
-	margin: 0; 
+    color: black;
+    list-style: none;
+    margin: 0;
     padding-top: 2pt;
-	vertical-align: middle;
-	padding-left: 6px;
-	font-size: 12pt;
-	height: 22pt;
+    vertical-align: middle;
+    padding-left: 6px;
+    font-size: 12pt;
+    height: 22pt;
     width: 100% - 6px;
-	background-color: #a9a9a9;
-	background-repeat: repeat;
+    background-color: #cecece;
+    background-repeat: repeat;
     cursor: default;
 }
 #ubiq-result-panel li img {
     height: 20pt;
 }
 
-#ubiq-result-panel li.selected {
-	background-color: #d3d3d3; 
+#ubiq-result-panel li.pipe {
+    background-color: #45cad1;
     /* background: linear-gradient(#efefef, #b0b0b0); */
     position:relative;
-    width: 100%;
 }
-#ubiq-result-panel .more-commands {
-    width: 100%;
-    line-height: 10px;
-    text-align: center;
+#ubiq-result-panel li.command {
+    background-color: #67efad;
+    /* background: linear-gradient(#efefef, #b0b0b0); */
+    position:relative;
 }
-#ubiq-result-panel li.selected::after {
+#ubiq-result-panel li.command::after {
     position:absolute;
     top:0%;
     left:100%;
     content:"";
     margin-left:0px;
-    width: 0; 
-    height: 0; 
+    width: 0;
+    height: 0;
     border-top: 12pt solid transparent;
     border-bottom: 12pt solid transparent;
     border-left: 6pt solid #d3d3d3;
+}
+#ubiq-result-panel .more-commands {
+    width: 100%;
+    line-height: 10px;
+    text-align: center;
 }

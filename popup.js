@@ -237,8 +237,10 @@ function ubiq_execute() {
     if (!directObj) return;
 
     var pipeVals = {};
-    if (CmdUtils.active_tab)
-        pipeVals["sel"] = CmdUtils.active_tab.selection.trim();
+    if (CmdUtils.active_tab) {
+        var sel = CmdUtils.active_tab.selection.trim();
+        if (sel !== "") pipeVals["sel"] = sel;
+    }
     ubiq_process_pipe(pipeVals, directObj);
 
     // Run command's "execute" function
@@ -374,8 +376,8 @@ function ubiq_complete_command(text) {
     return null;
 }
 
-function ubiq_show_command_options(parsed) {
-    if (!parsed) return;
+function ubiq_show_command_options(pipeVals, parsed) {
+    if (!pipeVals || !parsed) return;
 
     var cmd_struct = parsed._cmd;
     if (!("options" in cmd_struct)) return;
@@ -383,6 +385,25 @@ function ubiq_show_command_options(parsed) {
     var options_div = document.createElement('div');
     var options_list = document.createElement('ul');
 
+    // PIPE VALUES (available for current command)
+    if (Object.keys(pipeVals).length > 0) {
+        li = document.createElement('LI');
+        li.innerHTML = ubiq_html_encode("AVAILABLE VALUES");
+        li.setAttribute('class', 'pipe');
+        options_list.appendChild(li);
+    }
+    for (var key in pipeVals) {
+        li = document.createElement('LI');
+        li.innerHTML = ubiq_html_encode(key + " => " + pipeVals[key]);
+
+        options_list.appendChild(li);
+    }
+
+    // COMMAND VALUES (current values for current visualized command)
+    li = document.createElement('LI');
+    li.innerHTML = ubiq_html_encode(parsed.command.toUpperCase());
+    li.setAttribute('class', 'command');
+    options_list.appendChild(li);
     for (var key in cmd_struct["options"]) {
         li = document.createElement('LI');
         var val = cmd_struct["options"][key]["type"];
@@ -558,10 +579,12 @@ function ubiq_keyup_handler(evt) {
     if (ubiq_input_changed) {
         var parsed = ubiq_basic_parse();
         var pipeVals = {};
-        if (CmdUtils.active_tab)
-            pipeVals["sel"] = CmdUtils.active_tab.selection.trim();
+        if (CmdUtils.active_tab) {
+            var sel = CmdUtils.active_tab.selection.trim();
+            if (sel !== "") pipeVals["sel"] = sel;
+        }
         ubiq_process_pipe(pipeVals, parsed);
-        ubiq_show_command_options(parsed);
+        ubiq_show_command_options(pipeVals, parsed);
         ubiq_show_preview(parsed);
     }
 }
