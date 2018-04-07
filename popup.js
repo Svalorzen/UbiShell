@@ -455,7 +455,7 @@ function ubiq_show_command_options(pipeVals, parsed) {
     }
 
     li = document.createElement('LI');
-    li.innerHTML = ubiq_html_encode("input => " + parsed["input"]);
+    li.innerHTML = "input => " + markValue(parsed["input"]);
     options_list.appendChild(li);
 
     options_div.appendChild(options_list);
