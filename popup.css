@@ -148,6 +148,7 @@ pre {
     background-color: #cecece;
     background-repeat: repeat;
     cursor: default;
+    overflow: hidden;
 }
 #ubiq-result-panel li img {
     height: 20pt;
@@ -159,7 +160,7 @@ pre {
     position:relative;
 }
 #ubiq-result-panel li.command {
-    background-color: #67efad;
+    background-color: #54d898;
     /* background: linear-gradient(#efefef, #b0b0b0); */
     position:relative;
 }
