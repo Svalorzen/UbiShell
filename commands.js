@@ -1055,7 +1055,16 @@ CmdUtils.CreateCommand({
     names: ["help", "command-list"],
     description: "Provides basic help on using Ubiquity",
     icon: "res/icon-128.png",
-    preview: CmdUtils.CommandList.map( cmd => cmd.names.join(", ") ).concat(["help", "command-list"]).sort().join(", "),
+    preview: function(pblock, parsed) {
+        if (parsed.input !== "") {
+            var command = CmdUtils.getcmd(parsed.input);
+            if (command !== null) {
+                pblock.innerHTML = command.description;
+                return;
+            }
+        }
+        pblock.innerHTML = CmdUtils.CommandList.map( cmd => cmd.names.join(", ") ).concat(["help", "command-list"]).sort().join(", ");
+    },
     execute: CmdUtils.SimpleUrlBasedCommand("help.html")
 });
 
