@@ -8,7 +8,6 @@
 // jshint esversion: 6
 
 var ubiq_last_command = "";
-var ubiq_input_changed = false;
 
 // sets the tip field (for time being this is the preview panel)
 function ubiq_set_tip(v) {
@@ -512,7 +511,7 @@ function ubiq_show_matching_commands(text) {
 function ubiq_keyup_handler(evt) {
     // measure the input
     CmdUtils.inputUpdateTime = performance.now();
-    ubiq_save_input();
+    var ubiq_input_changed = ubiq_save_input();
 
     if (evt) {
         var kc = evt.keyCode;
@@ -563,6 +562,8 @@ function ubiq_save_input() {
     ubiq_last_command = cmd;
 
     if (typeof chrome !== 'undefined' && chrome.storage) chrome.storage.local.set({ 'lastCmd': cmd });
+
+    return ubiq_input_changed;
 }
 
 function ubiq_load_input() {
