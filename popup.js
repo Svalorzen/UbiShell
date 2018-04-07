@@ -216,8 +216,8 @@ function ubiq_basic_parse() {
 function ubiq_process_pipe(values, parsed) {
     for (var key in parsed) {
         for (var pipeKey in values) {
-            if (parsed[key] === "{" + pipeKey + "}")
-                parsed[key] = values[pipeKey];
+            if (typeof(parsed[key]) === "string")
+                parsed[key] = parsed[key].replace("{" + pipeKey + "}", values[pipeKey]);
         }
     }
 }
