@@ -92,9 +92,10 @@ function ubiq_show_preview(parsed) {
     return;
 }
 
-function ubiq_basic_parse() {
-    var text = ubiq_command();
-    var words = text.split(' ');
+function ubiq_basic_parse(text) {
+    if (!text) return null;
+
+    var words = text.trim().split(' ');
     var command = words.shift();
 
     var input = words.join(' ').trim();
@@ -216,8 +217,33 @@ function ubiq_basic_parse() {
 function ubiq_process_pipe(values, parsed) {
     for (var key in parsed) {
         for (var pipeKey in values) {
-            if (typeof(parsed[key]) === "string")
-                parsed[key] = parsed[key].replace("{" + pipeKey + "}", values[pipeKey]);
+            var token = "{" + pipeKey + "}";
+            // If we have to add this into a string
+            if (typeof(parsed[key]) === "string") {
+                var replacement = values[pipeKey];
+                // If we have a list, we wrap it with quotes and stitch it with spaces.
+                if (Array.isArray(values[pipeKey]))
+                    replacement = values[pipeKey].join(' ');
+
+                parsed[key] = parsed[key].replace(token, replacement);
+            }
+            // If we have to add it into a list
+            else if (Array.isArray(parsed[key])) {
+                // We merge ours in place of the token with splice
+                var replacement = [values[pipeKey]];
+                // If we also have a list, we don't need to wrap it into array.
+                if (Array.isArray(values[pipeKey]))
+                    replacement = values[pipeKey];
+
+                for (var i = 0; i < parsed[key].length; ++i) {
+                    // If an element in the list matches
+                    if (parsed[key][i] === token) {
+                        // Replace it with ours, and skip the ones we added
+                        parsed[key].splice(i, 1, ...replacement);
+                        i += replacement.length - 1;
+                    }
+                }
+            }
         }
     }
 }
@@ -233,7 +259,7 @@ function ubiq_execute() {
     // Create a fake Ubiquity-like object, to pass to
     // command's "execute" function
     var cmd_func = cmd_struct.execute;
-    var directObj = ubiq_basic_parse();
+    var directObj = ubiq_basic_parse(ubiq_command());
     if (!directObj) return;
 
     var pipeVals = {};
@@ -377,6 +403,19 @@ function ubiq_complete_command(text) {
 }
 
 function ubiq_show_command_options(pipeVals, parsed) {
+    function markValue(v) {
+        var str;
+        if (Array.isArray(v)) {
+            if (v.length > 0) {
+                str = "<mark>" + String(v[0]) + "</mark>";
+                for (var i = 1; i < v.length; ++i)
+                    str += ", <mark>" + String(v[i]) + "</mark>";
+            }
+        }
+        else str = "<mark>" + String(v) + "</mark>";
+        return str;
+    }
+
     ubiq_clear_command_options();
     if (!pipeVals || !parsed) return;
 
@@ -389,13 +428,13 @@ function ubiq_show_command_options(pipeVals, parsed) {
     // PIPE VALUES (available for current command)
     if (Object.keys(pipeVals).length > 0) {
         li = document.createElement('LI');
-        li.innerHTML = ubiq_html_encode("AVAILABLE VALUES");
+        li.innerHTML = "AVAILABLE VALUES";
         li.setAttribute('class', 'pipe');
         options_list.appendChild(li);
     }
     for (var key in pipeVals) {
         li = document.createElement('LI');
-        li.innerHTML = ubiq_html_encode(key + " => " + pipeVals[key]);
+        li.innerHTML = key + " => " + markValue(pipeVals[key]);
 
         options_list.appendChild(li);
     }
@@ -409,8 +448,8 @@ function ubiq_show_command_options(pipeVals, parsed) {
         li = document.createElement('LI');
         var val = cmd_struct["options"][key]["type"];
         if (parsed[key] !== null)
-            val = String(parsed[key]);
-        li.innerHTML = ubiq_html_encode(key + " => " + val);
+            val = parsed[key];
+        li.innerHTML = key + " => " + markValue(val);
 
         options_list.appendChild(li);
     }
@@ -584,16 +623,39 @@ function ubiq_keyup_handler(evt) {
     }
 
     if (ubiq_input_changed) {
-        var parsed = ubiq_basic_parse();
-        var pipeVals = {};
+        var text = ubiq_command();
+        var texts = text.split('|').map(str => str.trim()).filter(str => str !== "");
+
+        var sel = null;
         if (CmdUtils.active_tab) {
-            var sel = CmdUtils.active_tab.selection.trim();
-            if (sel !== "") pipeVals["sel"] = sel;
+            var s = CmdUtils.active_tab.selection.trim();
+            if (s !== "") sel = s;
         }
+
+        var pipeVals = {};
+        for (var i = 0; i < texts.length - 1; i++) {
+            var t = texts[i];
+
+            if (sel) pipeVals["sel"] = sel;
+
+            var parsed = ubiq_basic_parse(t);
+            ubiq_process_pipe(pipeVals, parsed);
+
+            pipeVals = ubiq_generate_output(parsed);
+        }
+        if (sel) pipeVals["sel"] = sel;
+
+        var parsed = ubiq_basic_parse(texts[i]);
         ubiq_process_pipe(pipeVals, parsed);
         ubiq_show_command_options(pipeVals, parsed);
         ubiq_show_preview(parsed);
     }
+}
+
+function ubiq_generate_output(parsed) {
+    if (!("output" in parsed._cmd)) return {};
+
+    return parsed._cmd.output(parsed);
 }
 
 function ubiq_save_input() {

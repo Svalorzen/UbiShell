@@ -527,6 +527,7 @@ CmdUtils.CreateCommand({
         var text = doc.replace(/&nbsp;/g, ' ');
         var regex = new RegExp(search, "gi");
         var matches = [];
+        console.log("begin: " + typeof(matches));
         var match;
         var counter = 50;
         while ((counter-- > 0) && (match = regex.exec(text))) {
@@ -537,7 +538,9 @@ CmdUtils.CreateCommand({
             if (match != "")
                 matches.push(match);
         }
+        console.log(typeof(matches));
         matches = matches.filter(onlyUnique);
+        console.log(typeof(matches));
         if (matches.length > 0)
             return {"matches": matches};
         return {};

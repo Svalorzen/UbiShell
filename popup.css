@@ -150,6 +150,11 @@ pre {
     cursor: default;
     overflow: hidden;
 }
+
+mark {
+    background-color: #e0e0e0;
+}
+
 #ubiq-result-panel li img {
     height: 20pt;
 }
