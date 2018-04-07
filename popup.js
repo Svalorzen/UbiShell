@@ -99,12 +99,6 @@ function ubiq_basic_parse() {
 
     var input = words.join(' ').trim();
 
-    var selection = false;
-    if (input === "" && CmdUtils.active_tab) {
-        input = CmdUtils.active_tab.selection.trim();
-        selection = true;
-    }
-
     // Find command element
     var cmd_struct = CmdUtils.getcmd(command);
     if (!cmd_struct) return null;
@@ -112,8 +106,7 @@ function ubiq_basic_parse() {
     var parsed_object = {
         text: text,
         command: command,
-        input: selection ? input : "",
-        _selection: selection,
+        input: "",
         _cmd: cmd_struct
     };
 
@@ -220,6 +213,15 @@ function ubiq_basic_parse() {
     return parsed_object;
 }
 
+function ubiq_process_pipe(values, parsed) {
+    for (var key in parsed) {
+        for (var pipeKey in values) {
+            if (parsed[key] === "{" + pipeKey + "}")
+                parsed[key] = values[pipeKey];
+        }
+    }
+}
+
 function ubiq_execute() {
     var words = ubiq_command().split(' ');
     var command = words.shift();
@@ -233,6 +235,11 @@ function ubiq_execute() {
     var cmd_func = cmd_struct.execute;
     var directObj = ubiq_basic_parse();
     if (!directObj) return;
+
+    var pipeVals = {};
+    if (CmdUtils.active_tab)
+        pipeVals["sel"] = CmdUtils.active_tab.selection.trim();
+    ubiq_process_pipe(pipeVals, directObj);
 
     // Run command's "execute" function
     try {
@@ -550,6 +557,10 @@ function ubiq_keyup_handler(evt) {
 
     if (ubiq_input_changed) {
         var parsed = ubiq_basic_parse();
+        var pipeVals = {};
+        if (CmdUtils.active_tab)
+            pipeVals["sel"] = CmdUtils.active_tab.selection.trim();
+        ubiq_process_pipe(pipeVals, parsed);
         ubiq_show_command_options(parsed);
         ubiq_show_preview(parsed);
     }

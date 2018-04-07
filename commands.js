@@ -752,9 +752,8 @@ CmdUtils.CreateCommand({
             from: obj.from || "",
             to: obj.to
         });
-        if (T[0] = '"') T.split("").slice(1, -1).join("");
-        if (obj._selection == true) {
-            CmdUtils.setSelection(T);
+        if (T[0] === '"') T = T.split("").slice(1, -1).join("");
+        if (CmdUtils.setSelection(T)) {
             CmdUtils.closePopup();
         }
     },
@@ -769,7 +768,7 @@ CmdUtils.CreateCommand({
             from: obj.from || "",
             to: obj.to
         });
-        if (T[0] = '"') T.split("").slice(1, -1).join("");
+        if (T[0] === '"') T = T.split("").slice(1, -1).join("");
         CmdUtils.setPreview(T);
     },
 });
