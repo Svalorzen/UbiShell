@@ -1,24 +1,30 @@
 {
-    "name": "UbiChr - Ubiquity for Chrome",
-    "short_name": "UbiChr",
-    "homepage_url": "https://github.com/rostok/ubichr",
-    "author": "rostok",
+    "applications": {
+        "gecko": {
+            "id": "ubishell@svalorzen.com"
+        }
+    },
+    "name": "UbiShell",
+    "short_name": "UbiShell",
+    "homepage_url": "https://github.com/svalorzen/UbiShell",
+    "author": "svalorzen",
     "version": "0.1.0.5",
-    "description": "Revived Ubiquity for Chrome",
+    "description": "Revived Ubiquity as a Shell",
     "content_security_policy": "script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com; object-src 'self'",
     "manifest_version": 2,
     "background": {
-        "scripts": ["lib/jquery-2.2.4.min.js", "utils.js", "cmdutils.js", "commands.js"],
-        "persistent":true
+        "scripts": ["lib/jquery-2.2.4.min.js", "utils.js", "cmdutils.js", "commands.js"]
     },
     "browser_action": {
-        "default_title": "UbiChr",
+        "default_title": "UbiShell",
         "default_popup": "popup.html",
-        "default_icon": "res/icon-128.png"
+        "default_icon": "res/icon-128.png",
+        "browser_style": false
     },
     "options_ui": {
         "page": "options.html",
-        "open_in_tab": true
+        "open_in_tab": true,
+        "browser_style": true
     },
     "commands": {
         "_execute_browser_action": {
