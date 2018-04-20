@@ -473,6 +473,7 @@ CmdUtils.CreateCommand({
     description: "Search the current page for the given words",
     options: {
         in: { type: "string" },
+        unique: { type: "boolean", def: false},
     },
     output: function output(obj) {
         var doc;
@@ -505,7 +506,8 @@ CmdUtils.CreateCommand({
             if (match != "")
                 matches.push(match);
         }
-        matches = matches.filter(onlyUnique);
+        if (obj.unique)
+            matches = matches.filter(onlyUnique);
         if (matches.length > 0)
             return {"matches": matches};
         return {};
@@ -536,7 +538,8 @@ CmdUtils.CreateCommand({
         // Copy all arguments not to transform
         for (var i = 0; i < obj.none.length; ++i) {
             var key = obj.none[i];
-            retval[key] = obj.pipe[key];
+            if (key in obj.pipe)
+                retval[key] = obj.pipe[key];
         }
         // Join the ones
         for (var i = 0; i < obj.join.length; ++i) {
@@ -546,9 +549,9 @@ CmdUtils.CreateCommand({
                 continue;
             var key = field.substring(0, div);
             var str = field.substring(div+1);
-            retval[key] = obj.pipe[key].join(str);
+            if (key in obj.pipe)
+                retval[key] = obj.pipe[key].join(str);
         }
-        console.log(retval);
         return retval;
     },
     preview: function preview(pblock, obj) {
@@ -954,25 +957,32 @@ CmdUtils.CreateCommand({
     description: desc = "evals math expressions",
     icon: "https://png.icons8.com/metro/50/000000/calculator.png",
     require: "https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.20.1/math.min.js",
-    preview: pr = function preview(previewBlock, {input:text}) {
-        if (text.trim()!='') {
+    output: function output(obj) {
+        var retval = {};
+        var input = obj.input;
+        if (input.trim()!='') {
             var m = new math.parser();
-            text = text.replace(",",".");
-            text = text.replace(" ","");
-            previewBlock.innerHTML = m.eval(text);
-            //CmdUtils.ajaxGet("http://api.mathjs.org/v1/?expr="+encodeURIComponent(args.text), (r)=>{ previewBlock.innerHTML = r; });
+            input = input.replace(",",".");
+            input = input.replace(" ","");
+            try {
+                var result = m.eval(input);
+                retval['result'] = result;
+            } catch (e) {}
         }
-        else
-            previewBlock.innerHTML = desc;
+        return retval;
     },
-    execute: function ({input:text}) {
-        if (text.trim()!='') {
-            var m = new math.parser();
-            text = text.replace(",",".");
-            text = text.replace(" ","");
-            text = m.eval(text);
-            CmdUtils.setSelection(text);
+    preview: pr = function preview(pblock, obj) {
+        var o = this.output(obj);
+        if (!('result' in o)) {
+            pblock.innerHTML = desc;
+        } else {
+            pblock.innerHTML = String(o.result);
         }
+    },
+    execute: function (obj) {
+        var o = this.output(obj);
+        if ('result' in o)
+            CmdUtils.setSelection(String(o.result));
     }
 });
 
