@@ -1,65 +1,115 @@
-# ubichr
-My humble attempt to create [Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) alternative for Chrome and Firefox Quantum browsers.
+Introduction
+============
 
-# installation
-To install use chrome web store https://chrome.google.com/webstore/search/ubichr
+UbiShell is a fork of [ubichr](https://github.com/rostok/ubichr), created with
+the approval of the author. It's a port of the original
+[Ubiquity](https://wiki.mozilla.org/Labs/Ubiquity) addon to WebExtension.
 
-# how to install dev version
-To install latest commited version please follow 'Load the extension' section here https://developer.chrome.com/extensions/getstarted
+UbiShell has the goal of creating a shell-like interface to the Web. While the
+original Ubiquity tried to create a natural language interface, we believe that
+it's better to have a deterministic, easy-to-understand interface for this tool.
 
-People wanting to remove irritating 'disable developer mode popup' please follow [the neat binary hack of chrome.dll](https://stackoverflow.com/questions/30287907/how-to-get-rid-of-disable-developer-mode-extensions-pop-up/30361260)
+![Example](https://user-images.githubusercontent.com/1609228/39069575-7a1780e8-44e0-11e8-96a6-f4ee7e8b7599.gif)
 
-# license & origins
+How Does It Work?
+=================
+
+UbiShell executes JavaScript commands that are defined by you, and can provide
+instantaneous feedback. A very simple example would be to search on a given
+website, without the need to first access the website.
+
+But UbiShell can be much more powerful than that. It can run arbitrary commands,
+and can pipe the result from a command to another, and all this while having
+access to both the Web, and the webpages rendered in your browser. You can look
+for certain strings in a webpage, pipe them to a mapping service, and send the
+resulting image by email to a friend! And all this without having to do any
+operation manually.
+
+Installation
+============
+
+As it is based on WebExtensions, UbiShell supports both Chrome and Firefox.
+
+This version of the addon has not yet been published, so you'll have to load it
+as a developer extension at the moment. You can do it by following the
+instructions below.
+
+- [Install for Chrome](https://developer.chrome.com/extensions/getstarted)
+- [Install for Firefox](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Temporary_Installation_in_Firefox)
+
+License
+=======
+
 MIT license
 
-Most of the code is based on http://github.com/cosimo/ubiquity-opera/
+Adding Commands
+===============
 
-# adding commands
-You can add your custom commands using built-in editor (CodeMirror) or modify commands.js. The syntax is quite simple and self explanatory
+The main power of Ubiquity, which is also shared by UbiShell, is that you can
+define your own commands (and copy them from other people!). This allows your
+shell interface to grow depending on the commands that *you* find useful.
 
-## basic command:
+You can add your own custom commands using the built-in editor (CodeMirror) or
+by modifying the `commands.js` file directly. Below is an example to get you
+started. You can use *any* JavaScript in the commands!
+
 ```javascript
+// You can add a new command to UbiShell by using the CreateCommand function.
 CmdUtils.CreateCommand({
-    name: "example", 
+    // You have to give a name to your command, and can optionally add some more
+    // informations in it.
+    name: "example",
     description: "A short description of your command.",
     author: "Your Name",
     icon: "http://www.mozilla.com/favicon.ico",
-    execute: function execute(args) {
-        alert("EX:You input: " + args.text, this);
+    // You can define options to your command. They will be called by typing
+    // their name preceded by '-' (so for example -from).
+    //
+    // For each option, you can define its type as 'list', 'string' or
+    // 'boolean'. A boolean option is true if it has been typed by the user.
+    // If needed, the option can be given a default value.
+    options: {
+        from: { type: "list", def: ["London", "Paris"] },
+        to: { type: "string" },
+        time: { type: "string", def: "now" },
     },
-    preview: function preview(pblock, args) {
-        pblock.innerHTML = "PV:Your input is " + args.text + ".";
-    },
-});
-```
-Use ```CmdUtils.CreateCommand()``` and provide object with ```name``` string and ```preview``` and ```execute``` functions. The ```execute``` function takes argument which is an object containing ```text``` property - a single string following command. The ```preview``` function also has ```pblock``` parameter pointing to popup div for various output.
-
-## command with some action
-```javascript
-CmdUtils.CreateCommand({
-    name: "google-search",
-    preview: "Search on Google for the given words",
+    // This simple command opens a webpage when executed (pressing Enter).
     execute: CmdUtils.SimpleUrlBasedCommand(
         "http://www.google.com/search?client=opera&num=1&q={text}&ie=utf-8&oe=utf-8"
-    )
-});
-```
+    ),
+    // Otherwise, you can define a proper JavaScript function by hand (note that
+    // the 'execute' function does not get the 'pblock' parameter). This is
+    // executed every time the input changes.
+    preview: async function preview(pblock, args) {
+        // The args parameter contains all the inputs of your program. In
+        // particular it contains:
+        //
+        // - text: The whole command as typed by the user
+        // - command: The command name as typed by the user
+        // - input: The free input to your command
+        // - A series of keys, one for each option you defined. In this case the
+        //   options would be 'from', 'to' and 'time.
+        input = args.input
 
-Note that execute is created using ```CmdUtils.SimpleUrlBasedCommand()``` the output function will substitute {text} and {location} template literals with actual argument and current tab url.
+        // You can request content from outside using async and await.
+        var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(input)+"&s=tt&ref_=fn_al_tt_mr" );
 
-## getting outside data with async / await
-```javascript
-CmdUtils.CreateCommand({
-    name: "imdb",
-    description: "Searches for movies on IMDb",
-    icon: "http://www.imdb.com/favicon.ico",
-    preview: async function preview(pblock, {text: text}) {
-        pblock.innerHTML = "Searches for movies on IMDb";
-        var doc = await CmdUtils.get("http://www.imdb.com/find?q="+encodeURIComponent(text)+"&s=tt&ref_=fn_al_tt_mr" );
+        // In the preview function, you can show results by writing to the
+        // innerHTML field of the pblock parameter.
         pblock.innerHTML = "<table>"+jQuery("table.findList", doc).html()+"</table>";
     },
-    execute: CmdUtils.SimpleUrlBasedCommand("http://www.imdb.com/find?q={text}&s=tt&ref_=fn_al_tt_mr")
 });
 ```
 
-Here the ```preview``` function is defined with ```async``` keyword. This will allow to avoid callback hell when getting data with GET request (```CmdUtils.get(url)```). Note the destructuring assignment singling out the ```text``` parameter in ```preview``` function. Note: final implementation uses one liner with ```jQuery.load()```.
+Contributing
+============
+
+There is a *ton* to do to improve UbiShell. You can add more commands to the
+default set, improve existing commands or add functionality to them, improve the
+design and GUI of UbiShell..
+
+Additionally, you can help test the system on both Firefox and Chrome, so that
+it can run smoothly on both platforms.
+
+The old Ubiquity used to have a huge community making commands, and that was one
+of its core strengths. This project really needs your help if it is to succeed.
