@@ -1,12 +1,3 @@
-//
-// UbiChr a Ubiquity for Chrome
-// rostok@3e.pl
-//
-// based on http://github.com/cosimo/ubiquity-chrome/ by Cosimo Streppone, <cosimo@cpan.org>
-//
-// Original Ubiquity Project: http://labs.mozilla.org/ubiquity/
-// jshint esversion: 6
-
 var ubiq_last_command = "";
 
 // sets the tip field (for time being this is the preview panel)
@@ -121,28 +112,44 @@ function ubiq_basic_parse(text) {
     var current_value = [];
     var value_open = false
 
-    var update_parsed = function(key, value) {
+    var string_token_to_string = function(str) {
+        str = String(str).trim();
+        if (str === "") return "";
+        // If value is between quotes, keep it even if not trimmed
+        if (str[0] === str[str.length - 1] &&
+            (str[0] === "'" || str[0] === '"'))
+        {
+            str = str.slice(1, -1);
+        }
+        return str;
+    };
+
+    var update_parsed = function(key, value, set_default = false) {
         if (value === null) return;
         if (key !== null) {
-            switch (cmd_struct["options"][key]["type"]) {
-                case "boolean": {
-                    parsed_object[key] = Boolean(value);
-                    break;
-                }
-                case "string": {
-                    value = String(value).trim();
-                    if (value === "") return;
-                    parsed_object[key] = value;
-                    break;
-                }
-                case "list": {
-                    value = String(value).trim();
-                    if (value === "") return;
-                    if (!parsed_object[key]) parsed_object[key] = [value];
-                    else parsed_object[key].push(value);
-                    break;
-                }
-            };
+            if (set_default) {
+                parsed_object[key] = value;
+            } else {
+                switch (cmd_struct["options"][key]["type"]) {
+                    case "boolean": {
+                        parsed_object[key] = Boolean(value);
+                        break;
+                    }
+                    case "string": {
+                        value = String(value).trim();
+                        if (value === "") return;
+                        parsed_object[key] = value;
+                        break;
+                    }
+                    case "list": {
+                        value = string_token_to_string(value);
+                        if (value === "") return;
+                        if (!parsed_object[key]) parsed_object[key] = [value];
+                        else parsed_object[key].push(value);
+                        break;
+                    }
+                };
+            }
             // Add the new key in the args, so that they are sorted by
             // apparition.
             if (parsed_object["args"].indexOf(key) === -1)
@@ -181,7 +188,7 @@ function ubiq_basic_parse(text) {
                 continue;
             }
             // Otherwise we are done, and we merge the various tokens.
-            current_value.push(words[i].slice(0, -1));
+            current_value.push(words[i]);
             value_open = false
 
             current_value = current_value.join(' ');
@@ -189,11 +196,11 @@ function ubiq_basic_parse(text) {
             // If the word starts with a quote, check if it also ends with
             // it, otherwise start a new multi-token word.
             if (words[i].endsWith(words[i][0])) {
-                current_value = words[i].slice(1, -1);
+                current_value = words[i];
             } else {
                 value_open = words[i][0];
 
-                current_value.push(words[i].substr(1));
+                current_value.push(words[i]);
                 continue;
             }
         } else {
@@ -209,7 +216,7 @@ function ubiq_basic_parse(text) {
     // Add options that were defaulted and not specified
     for (key in cmd_struct["options"])
         if ("def" in cmd_struct["options"][key] && parsed_object["args"].indexOf(key) === -1)
-            update_parsed(key, cmd_struct["options"][key]["def"]);
+            update_parsed(key, cmd_struct["options"][key]["def"], true);
 
     return parsed_object;
 }
@@ -246,6 +253,7 @@ function ubiq_process_pipe(values, parsed) {
             }
         }
     }
+    parsed['pipe'] = values;
 }
 
 function ubiq_execute() {
@@ -407,7 +415,7 @@ function ubiq_show_command_options(pipeVals, parsed) {
         var str;
         if (Array.isArray(v)) {
             if (v.length > 0) {
-                str = "<mark>" + String(v[0]) + "</mark>";
+                str = "<mark>" + ubiq_html_encode(v[0]) + "</mark>";
                 for (var i = 1; i < v.length; ++i)
                     str += ", <mark>" + String(v[i]) + "</mark>";
             }
@@ -639,6 +647,7 @@ function ubiq_keyup_handler(evt) {
             if (sel) pipeVals["sel"] = sel;
 
             var parsed = ubiq_basic_parse(t);
+            if (!parsed) return;
             ubiq_process_pipe(pipeVals, parsed);
 
             pipeVals = ubiq_generate_output(parsed);
@@ -646,6 +655,7 @@ function ubiq_keyup_handler(evt) {
         if (sel) pipeVals["sel"] = sel;
 
         var parsed = ubiq_basic_parse(texts[i]);
+        if (!parsed) return;
         ubiq_process_pipe(pipeVals, parsed);
         ubiq_show_command_options(pipeVals, parsed);
         ubiq_show_preview(parsed);
@@ -653,8 +663,6 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_generate_output(parsed) {
-    if (!("output" in parsed._cmd)) return {};
-
     return parsed._cmd.output(parsed);
 }
 

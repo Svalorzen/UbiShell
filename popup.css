@@ -121,6 +121,7 @@ pre {
     clear: both;
     text-align: left;
     color: white;
+    white-space: pre-wrap;
 }
 /*
 #ubiq-result-panel.result {
