@@ -72,13 +72,16 @@ function ubiq_show_preview(parsed) {
             }
         }
 
+        var result = true;
         if (typeof cmd_struct.require !== 'undefined')
-            CmdUtils.loadScripts( cmd_struct.require, ()=>{ pfunc(); } );
+            result = result && CmdUtils.loadScripts(cmd_struct.require);
+        if (result && typeof cmd_struct.requirePopup !== 'undefined')
+            result = result && CmdUtils.loadScripts( cmd_struct.requirePopup, window );
+
+        if (result)
+            pfunc();
         else
-            if (typeof cmd_struct.requirePopup !== 'undefined')
-                CmdUtils.loadScripts( cmd_struct.requirePopup, ()=>{ pfunc(); }, window );
-            else
-                pfunc();
+            ubiq_set_preview("Some scripts are being loaded...");
     }
     return;
 }
@@ -663,7 +666,17 @@ function ubiq_keyup_handler(evt) {
 }
 
 function ubiq_generate_output(parsed) {
-    return parsed._cmd.output(parsed);
+    var result = true;
+    var cmd_struct = parsed._cmd;
+    if (typeof cmd_struct.require !== 'undefined')
+        result = result && CmdUtils.loadScripts(cmd_struct.require);
+    if (result && typeof cmd_struct.requirePopup !== 'undefined')
+        result = result && CmdUtils.loadScripts( cmd_struct.requirePopup, window );
+
+    if (result)
+        return cmd_struct.output(parsed);
+    else
+        return {};
 }
 
 function ubiq_save_input() {
