@@ -78,8 +78,7 @@ pre {
 
 #ubiq-command-preview {
     color: #ddd;
-    /* width: 540px;  */
-    width: 100%;
+    width: 540px;
     height: 505px;
     position: relative;
     /* overflow-y: auto; */
@@ -115,7 +114,7 @@ pre {
 #ubiq-result-panel {
     background: #3b3b3b;
     vertical-align: top;
-    width: 100%;
+    width: 200px;
     height: 505px;
     margin: 0;
     clear: both;
@@ -132,7 +131,7 @@ pre {
 #ubiq-result-panel ul {
     padding:0;
     margin:0;
-    width: 100%;
+    width: 200px;
     height: 100%;
 }
 
@@ -145,7 +144,7 @@ pre {
     padding-left: 6px;
     font-size: 12pt;
     height: 22pt;
-    width: 100% - 6px;
+    width: 200px;
     background-color: #cecece;
     background-repeat: repeat;
     cursor: default;
