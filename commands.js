@@ -474,60 +474,27 @@ CmdUtils.CreateCommand({
     options: {
         in: { type: "string" },
     },
-    preview: function preview(pblock, obj) {
-        var doc;
-        if (obj.in) doc = obj.in;
-        else {
-            if (!CmdUtils.active_tab) return;
-            doc = CmdUtils.active_tab.documentText;
-        }
-
-        var search = obj.input;
-        if (search.match(/^\s*$/)) {
-            pblock.innerHTML = "";
-            return;
-        }
-        search = search.replace("***", "\\b(\\w*)\\b");
-        search = search.replace("___", "\\b(.*)\\b");
-        var text = doc.replace(/&nbsp;/g, ' ');
-        var regex = new RegExp(search, "gi");
-        var matches = [];
-        var match;
-        var counter = 50;
-        while ((counter-- > 0) && (match = regex.exec(text))) {
-            if (match.length == 1)
-                match = match[0];
-            else
-                match = match[1];
-            if (match != "")
-                matches.push(match);
-        }
-        matches = matches.filter(onlyUnique);
-        if (matches.length == 0) {
-            pblock.innerHTML = "No matches."
-        } else {
-            pblock.innerHTML = matches.join("<br>");
-        }
-    },
     output: function output(obj) {
         var doc;
         if (obj.in) doc = obj.in;
         else {
-            if (!CmdUtils.active_tab) return;
+            if (!CmdUtils.active_tab) return {};
             doc = CmdUtils.active_tab.documentText;
         }
 
         var search = obj.input;
         if (search.match(/^\s*$/)) {
-            pblock.innerHTML = "";
-            return;
+            return {};
         }
         search = search.replace("***", "\\b(\\w*)\\b");
         search = search.replace("___", "\\b(.*)\\b");
         var text = doc.replace(/&nbsp;/g, ' ');
-        var regex = new RegExp(search, "gi");
+        try {
+            var regex = new RegExp(search, "gi");
+        } catch (e) {
+            return {};
+        }
         var matches = [];
-        console.log("begin: " + typeof(matches));
         var match;
         var counter = 50;
         while ((counter-- > 0) && (match = regex.exec(text))) {
@@ -538,13 +505,56 @@ CmdUtils.CreateCommand({
             if (match != "")
                 matches.push(match);
         }
-        console.log(typeof(matches));
         matches = matches.filter(onlyUnique);
-        console.log(typeof(matches));
         if (matches.length > 0)
             return {"matches": matches};
         return {};
-    }
+    },
+    preview: function preview(pblock, obj) {
+        var o = this.output(obj);
+        if (!('matches' in o) || o.matches.length == 0) {
+            pblock.innerHTML = "No matches."
+        } else {
+            pblock.innerHTML = o.matches.join("<br>");
+        }
+    },
+});
+
+CmdUtils.CreateCommand({
+    name: "transform",
+    description: "Transform input option keys and pass along all options.",
+    help: '\
+        join: "key;join_string"\
+        none: "key"\
+    ',
+    options: {
+        join: { type: "list", def: [] },
+        none: { type: "list", def: [] },
+    },
+    output: function output(obj) {
+        var retval = {}
+        // Copy all arguments not to transform
+        for (var i = 0; i < obj.none.length; ++i) {
+            var key = obj.none[i];
+            retval[key] = obj.pipe[key];
+        }
+        // Join the ones
+        for (var i = 0; i < obj.join.length; ++i) {
+            var field = obj.join[i];
+            var div = field.indexOf(';');
+            if (div === -1)
+                continue;
+            var key = field.substring(0, div);
+            var str = field.substring(div+1);
+            retval[key] = obj.pipe[key].join(str);
+        }
+        console.log(retval);
+        return retval;
+    },
+    preview: function preview(pblock, obj) {
+        output = this.output(obj);
+        pblock.innerHTML = JSON.stringify(output);
+    },
 });
 
 CmdUtils.CreateCommand({
@@ -594,7 +604,7 @@ CmdUtils.CreateCommand({
         text = text.trim();
         pblock.innerHTML = "Search on Google for "+text;
         if (text!="") {
-            var doc = await CmdUtils.get("https://www.google.pl/search?q="+encodeURIComponent(text) );
+            var doc = await CmdUtils.get("https://www.google.com/search?q="+encodeURIComponent(text) );
             doc = jQuery("div#rso", doc)
             .find("a").each(function() { $(this).attr("target", "_blank")}).end()
             .find("cite").remove().end()
