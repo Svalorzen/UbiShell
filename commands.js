@@ -607,7 +607,7 @@ CmdUtils.CreateCommand({
         text = text.trim();
         pblock.innerHTML = "Search on Google for "+text;
         if (text!="") {
-            var doc = await CmdUtils.get("https://www.google.com/search?q="+encodeURIComponent(text) );
+            var doc = await CmdUtils.get("https://www.google.com/search?hl=en&q="+encodeURIComponent(text) );
             doc = jQuery("div#rso", doc)
             .find("a").each(function() { $(this).attr("target", "_blank")}).end()
             .find("cite").remove().end()
