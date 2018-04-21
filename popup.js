@@ -1,92 +1,41 @@
 var ubiq_last_command = "";
 
-// sets the tip field (for time being this is the preview panel)
-function ubiq_set_tip(v) {
-    // var el = document.getElementById('ubiq-command-tip');
-    // if (!el) return;
-    // el.innerHTML = v;
-    ubiq_set_preview(v);
-}
-
 function ubiq_preview_el() {
     return document.getElementById('ubiq-command-preview');
-}
-
-// sets preview panel, prepend allows to add new contnet to the top separated by HR
-function ubiq_set_preview(v, prepend) {
-    v = v || "";
-    prepend = prepend === true;
-    var el = ubiq_preview_el();
-    if (!el) return;
-    el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
 }
 
 function ubiq_result_el() {
     return document.getElementById('ubiq-result-panel');
 }
 
-// sets result panel, prepend allows to add new contnet to the top separated by HR
-function ubiq_set_result(v, prepend) {
-    v = v || "";
-    prepend = prepend === true;
+function ubiq_input_el() {
+    return document.getElementById('ubiq_input');
+}
+
+function ubiq_set_preview(v) {
+    if (!v) return;
+    var el = ubiq_preview_el();
+    if (!el) return;
+    el.innerHTML = v;
+}
+
+function ubiq_set_result(v) {
+    if (!v) return;
     var el = ubiq_result_el();
     if (!el) return;
-    el.innerHTML = v + (prepend ? "<hr/>" + el.innerHTML : "");
-    if (v!="") ubiq_set_preview("");
+    el.innerHTML = v;
 }
 
-// clears tip, result and preview panels
-function ubiq_clear() {
-    ubiq_set_tip("");
-    ubiq_set_result("");
-    ubiq_set_preview("");
+function ubiq_focus() {
+    el = ubiq_input_el();
+    setTimeout("el.focus()", 50);
 }
 
-// shows preview for command, cmd is command index
-async function ubiq_show_preview(parsed) {
-    if (!parsed) return;
+function ubiq_command() {
+    var cmd = ubiq_input_el();
 
-    var cmd_struct = parsed._cmd;
-    var preview_func = cmd_struct.preview;
-
-    switch(typeof preview_func)
-    {
-    case 'undefined':
-            ubiq_set_preview( cmd_struct.description );
-            break;
-    case 'string':
-            ubiq_set_preview( preview_func );
-            break;
-    default:
-        var pfunc = ()=>{
-            // zoom overflow dirty fix
-            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto");
-            try {
-                (preview_func.bind(cmd_struct))(ubiq_preview_el(), parsed);
-            } catch (e) {
-                CmdUtils.notify(e.toString(), "preview function error")
-                console.error(e.stack);
-                if (CmdUtils.backgroundWindow && CmdUtils.backgroundWindow.error) {
-                    CmdUtils.backgroundWindow.error(e.stack);
-                }
-            }
-        }
-
-        var resultRequire = true;
-        var resultRequirePopup = true;
-
-        if (typeof cmd_struct.require !== 'undefined')
-            resultRequire = CmdUtils.loadScripts(cmd_struct.require);
-        if (typeof cmd_struct.requirePopup !== 'undefined')
-            resultRequirePopup = CmdUtils.loadScripts( cmd_struct.requirePopup, window );
-
-        var result = await resultRequire && await resultRequirePopup;
-        if (result)
-            pfunc();
-        else
-            ubiq_set_preview("Failed to load some scripts...");
-    }
-    return;
+    if (!cmd) return '';
+    return cmd.value;
 }
 
 function ubiq_basic_parse(text) {
@@ -297,91 +246,12 @@ function ubiq_execute() {
     return;
 }
 
-function ubiq_help() {
-    var html = '<p>Type the name of a command and press Enter to execute it, or <b>help</b> for assistance.</p>';
-    html += "<p>commands loaded:<BR>";
-    html += CmdUtils.CommandList.map((c)=>{
-        return "<span fakeattr='"+c.name+"' href=# title='"+c.description+"'>"+(c.builtIn ? c.name : "<u>"+c.name+"</u>")+"</span>";
-    }).sort().join(", ");
-    html += "<p>";
-    html += "<u>Keys:</u><br>";
-    html += "Ctrl-C - copy preview to clipboard<br>";
-    html += "up/down - cycle through commands suggestions<br>";
-    html += "F5 - reload the extension";
-    return html;
-}
-
-function ubiq_focus() {
-    el = ubiq_input();
-    setTimeout("el.focus()", 50);
-}
-
-function ubiq_input() {
-    return document.getElementById('ubiq_input');
-}
-
-function ubiq_command() {
-    var cmd = ubiq_input();
-
-    if (!cmd) return '';
-    return cmd.value;
-}
-
-function _ubiq_image_error(elm) {
-    elm.src = 'res/spacer.png';
-};
-function ubiq_command_icon(c) {
-    var icon = CmdUtils.CommandList[c].icon;
-    if (!icon) {
+function ubiq_command_icon(parsed) {
+    var icon = parsed._cmd.icon;
+    if (!icon)
         icon = 'res/spacer.png';
-    }
-    icon = '<img src="' + icon + '" border="0" alt="" onerror="_ubiq_image_error(this);" align="absmiddle"> ';
-    return icon;
-}
 
-function ubiq_command_name(c) {
-    return CmdUtils.CommandList[c].name;
-}
-
-function ubiq_fuzzy_search(needle, haystack) {
-  var rc, prefpart, prev;
-      hlen = haystack.length,
-      nlen = needle.length;
-  if (nlen > hlen) {
-    return false;
-  }
-  needle = needle.toLocaleLowerCase();
-  haystack = haystack.toLocaleLowerCase();
-  if (nlen === hlen && needle === haystack) {
-    return 0x7fffffff;
-  }
-  if (nlen < hlen && haystack.substr(0, nlen) === needle) {
-    if (haystack.charAt(nlen).match(/\W/)) {
-      return nlen * 16;
-    }
-    return nlen * 8;
-  }
-  prefpart = 0;
-  for (var i = nlen; i >= 2; i--) {
-    if (haystack.substr(0, i) === needle.substr(0, i)) {
-      prefpart = i;
-      break;
-    }
-  }
-  rc = prefpart * 4;
-  prev = prefpart;
-  mcycle: for (var i = prefpart, j = prefpart; i < nlen; i++) {
-    var nch = needle.charAt(i);
-    while (j < hlen) {
-      if (haystack.charAt(j++) === nch) {
-        rc += (nlen - i)*1.5 / (j - prev);
-        prev = j;
-        continue mcycle;
-      }
-    }
-    return 0;
-  }
-  return rc > 0 ? rc : 0;
+    return '<img src="' + icon + '" border="0" alt="" align="absmiddle"> ';
 }
 
 // html-escape
@@ -431,7 +301,7 @@ function ubiq_show_command_options(pipeVals, parsed) {
         return str;
     }
 
-    ubiq_clear_command_options();
+    ubiq_set_result("");
     if (!pipeVals || !parsed) return;
 
     var cmd_struct = parsed._cmd;
@@ -456,7 +326,7 @@ function ubiq_show_command_options(pipeVals, parsed) {
 
     // COMMAND VALUES (current values for current visualized command)
     li = document.createElement('LI');
-    li.innerHTML = ubiq_html_encode(parsed.command.toUpperCase());
+    li.innerHTML = ubiq_command_icon(parsed) + ubiq_html_encode(parsed.command.toUpperCase());
     li.setAttribute('class', 'command');
     options_list.appendChild(li);
     for (var key in cmd_struct["options"]) {
@@ -474,125 +344,7 @@ function ubiq_show_command_options(pipeVals, parsed) {
     options_list.appendChild(li);
 
     options_div.appendChild(options_list);
-    ubiq_result_el().innerHTML = options_div.innerHTML;
-}
-
-function ubiq_clear_command_options() {
-    ubiq_result_el().innerHTML = "";
-}
-
-// will also call preview
-function ubiq_show_matching_commands(text) {
-    const max_matches = 15;
-    if (!text) text = ubiq_command();
-
-    // Always consider 1st word only
-    text = text.split(' ')[0];
-
-    ubiq_first_match = null;
-
-    var show_all = text == '*all';
-    var matches = [];
-    var fuzzy_matches = [];
-    if (text.length > 0) {
-        for (var c in CmdUtils.CommandList) {
-            if (show_all) {
-                matches.push(c);
-                continue;
-            }
-            var cmdnames = CmdUtils.CommandList[c].names;
-            var sr2, sr = [c, null, 0];
-            for (var cmd of cmdnames) {
-                sr2 = ubiq_fuzzy_search(text, cmd);
-                if (sr2 > sr[2]) {
-                    sr[1] = cmd;
-                    sr[2] = sr2;
-                }
-            }
-            if (!sr[2]) continue;
-            if (sr == 0x7fffffff) {
-                matches.push(sr);
-            } else {
-                fuzzy_matches.push(sr);
-            }
-        }
-    }
-
-    // Some substring matches found, append to list of matches
-    if (fuzzy_matches.length && matches.length <= max_matches) {
-        // sort by weights (desc) and found name (asc):
-        fuzzy_matches = fuzzy_matches.sort(function(a, b) {
-            // if equal weights:
-            if (b[2] == a[2]) {
-                // alphabetical:
-                return a[1].localeCompare(b[1]);
-            }
-            // larger weights first:
-            return b[2] - a[2];
-        })
-        for (var c of fuzzy_matches) {
-            matches.push(c);
-            if (matches.length > max_matches) {
-                break;
-            }
-        }
-    }
-    // Too long lists overflow from the layer
-    if (matches.length > max_matches) {
-        matches.length = max_matches;
-        matches.push('...');
-    }
-
-    // Don't navigate outside boundaries of the list of matches
-    if (ubiq_selected_command >= matches.length) {
-        ubiq_selected_command = matches.length - 1;
-    } else if (ubiq_selected_command < 0) {
-        ubiq_selected_command = 0;
-    }
-    // We have matches, show a list
-    if (matches.length > 0) {
-        var suggestions_div = document.createElement('div');
-        var suggestions_list = document.createElement('ul');
-        var selcmdidx = matches[ubiq_selected_command][0];
-        ubiq_set_tip( CmdUtils.CommandList[ selcmdidx ].description );
-        ubiq_show_preview(selcmdidx);
-
-        for (var c in matches) {
-            var is_selected = (c == ubiq_selected_command);
-            c = matches[c];
-            var li;
-            if (c == '...') {
-                li = document.createElement('DIV');
-                li.setAttribute('class', 'more-commands');
-                li.innerHTML = c;
-            } else {
-                li = document.createElement('LI');
-                var foundname = c[1];
-                c = c[0];
-                var cmd = ubiq_command_name(c);
-                var icon = ubiq_command_icon(c);
-                if (is_selected) ubiq_first_match = cmd;
-                //if (foundname != cmd) { foundname = cmd + " (" + foundname + ")" };
-                li.innerHTML = icon + ubiq_html_encode(foundname);
-            }
-            if (is_selected)
-                li.setAttribute('class', 'selected');
-            suggestions_list.appendChild(li);
-        }
-
-        suggestions_div.appendChild(suggestions_list);
-        ubiq_result_el().innerHTML = suggestions_div.innerHTML; // shouldn't clear the preview
-        // ubiq_preview_set_visible(true);
-    } else {
-        // ubiq_preview_set_visible(false);
-        ubiq_selected_command = -1;
-        ubiq_clear();
-        ubiq_set_result( ubiq_help() );
-        if (text.length)
-            ubiq_set_result( 'no commands found for <b>'+ ubiq_html_encode(text) +'</b>', true );
-    }
-
-    return;
+    ubiq_set_result(options_div.innerHTML);
 }
 
 async function ubiq_process_input() {
@@ -626,6 +378,7 @@ async function ubiq_process_input() {
     ubiq_show_preview(parsed);
 }
 
+// Main loop, everything begins from here.
 function ubiq_keyup_handler(evt) {
     // measure the input
     CmdUtils.inputUpdateTime = performance.now();
@@ -642,25 +395,23 @@ function ubiq_keyup_handler(evt) {
         }
 
         // On TAB, try to autocomplete command
-        if (kc == 9) {
+        else if (kc == 9) {
             command = ubiq_complete_command();
             if (command !== null) {
-                ubiq_input().value = command;
+                ubiq_input_el().value = command;
                 ubiq_input_changed = ubiq_save_input();
             }
             ubiq_focus();
-
-            if (!ubiq_input_changed) return;
         }
 
         // On F5 restart extension
-        if (kc == 116) {
+        else if (kc == 116) {
             chrome.runtime.reload();
             return;
         }
 
         // Ctrl+C copies preview to clipboard
-        if (kc == 67 && evt.ctrlKey) {
+        else if (kc == 67 && evt.ctrlKey) {
             backgroundPage.console.log("copy to clip");
             var el = ubiq_preview_el();
             if (!el) return;
@@ -692,8 +443,56 @@ async function ubiq_generate_output(parsed) {
         return {};
 }
 
+async function ubiq_show_preview(parsed) {
+    if (!parsed) return;
+
+    var pblock = ubiq_preview_el();
+
+    var cmd_struct = parsed._cmd;
+    var preview_func = cmd_struct.preview;
+
+    switch(typeof preview_func) {
+        case 'undefined':
+            ubiq_set_preview(cmd_struct.description);
+            break;
+
+        case 'string':
+            ubiq_set_preview(preview_func);
+            break;
+
+        default:
+            var resultRequire = true;
+            var resultRequirePopup = true;
+
+            if (typeof cmd_struct.require !== 'undefined')
+                resultRequire = CmdUtils.loadScripts(cmd_struct.require);
+            if (typeof cmd_struct.requirePopup !== 'undefined')
+                resultRequirePopup = CmdUtils.loadScripts( cmd_struct.requirePopup, window );
+
+            var result = await resultRequire && await resultRequirePopup;
+            if (!result) {
+                ubiq_set_preview("Failed to load some scripts...");
+                return;
+            }
+
+            // zoom overflow dirty fix
+            CmdUtils.popupWindow.jQuery("#ubiq-command-preview").css("overflow-y", "auto");
+            try {
+                await cmd_struct.preview(pblock, parsed);
+            } catch (e) {
+                CmdUtils.notify(e.toString(), "preview function error")
+                console.error(e.stack);
+                if (CmdUtils.backgroundWindow && CmdUtils.backgroundWindow.error) {
+                    CmdUtils.backgroundWindow.error(e.stack);
+                }
+            }
+            break;
+    }
+    return;
+}
+
 function ubiq_save_input() {
-    var cmd = ubiq_input().value;
+    var cmd = ubiq_input_el().value;
 
     ubiq_input_changed = cmd.trim() !== ubiq_last_command.trim();
     ubiq_last_command = cmd;
@@ -704,7 +503,7 @@ function ubiq_save_input() {
 }
 
 function ubiq_load_input() {
-    var cmd = ubiq_input();
+    var cmd = ubiq_input_el();
     if (typeof chrome === 'undefined' || !chrome.storage)
         return;
 
@@ -718,11 +517,9 @@ function ubiq_load_input() {
     });
 }
 
-
 $(window).on('load', async function() {
     if (typeof CmdUtils !== 'undefined' && typeof Utils !== 'undefined' && typeof backgroundPage !== 'undefined' ) {
         CmdUtils.setPreview = ubiq_set_preview;
-        CmdUtils.setResult = ubiq_set_result;
         CmdUtils.popupWindow = window;
 
         await CmdUtils.updateActiveTab();
