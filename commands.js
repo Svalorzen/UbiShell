@@ -779,7 +779,7 @@ function msTranslator(method, params, back) {
 CmdUtils.CreateCommand({
     name: "translate",
     description: "Translates from one language to another.",
-    icon: "https://www.bing.com/translator/favicon.ico",
+    icon: "https://www.bing.com/sa/simg/bing_p_rr_teal_min.ico",
     help: '\
     You can specify the language to translate to,\
     and the language to translate from.\
