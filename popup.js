@@ -211,41 +211,6 @@ function ubiq_process_pipe(values, parsed) {
     parsed['pipe'] = values;
 }
 
-function ubiq_execute() {
-    var words = ubiq_command().split(' ');
-    var command = words.shift();
-
-    // Find command element
-    cmd_struct = CmdUtils.getcmd(command);
-    if (!cmd_struct) return;
-
-    // Create a fake Ubiquity-like object, to pass to
-    // command's "execute" function
-    var cmd_func = cmd_struct.execute;
-    var directObj = ubiq_basic_parse(ubiq_command());
-    if (!directObj) return;
-
-    var pipeVals = {};
-    if (CmdUtils.active_tab) {
-        var sel = CmdUtils.active_tab.selection.trim();
-        if (sel !== "") pipeVals["sel"] = sel;
-    }
-    ubiq_process_pipe(pipeVals, directObj);
-
-    // Run command's "execute" function
-    try {
-        CmdUtils.deblog("executing [", directObj.cmd ,"] [", directObj.input ,"]");
-        cmd_func(directObj);
-        CmdUtils.closePopup();
-    } catch (e) {
-        CmdUtils.notify(e.toString(), "execute function error")
-        console.error(e.stack);
-        CmdUtils.backgroundWindow.error(e.stack);
-    }
-
-    return;
-}
-
 function ubiq_command_icon(parsed) {
     var icon = parsed._cmd.icon;
     if (!icon)
@@ -347,83 +312,6 @@ function ubiq_show_command_options(pipeVals, parsed) {
     ubiq_set_result(options_div.innerHTML);
 }
 
-async function ubiq_process_input() {
-    var text = ubiq_command();
-    var texts = text.split('|').map(str => str.trim()).filter(str => str !== "");
-
-    var sel = null;
-    if (CmdUtils.active_tab) {
-        var s = CmdUtils.active_tab.selection.trim();
-        if (s !== "") sel = s;
-    }
-
-    var pipeVals = {};
-    for (var i = 0; i < texts.length - 1; i++) {
-        var t = texts[i];
-
-        if (sel) pipeVals["sel"] = sel;
-
-        var parsed = ubiq_basic_parse(t);
-        if (!parsed) return;
-        ubiq_process_pipe(pipeVals, parsed);
-
-        pipeVals = await ubiq_generate_output(parsed);
-    }
-    if (sel) pipeVals["sel"] = sel;
-
-    var parsed = ubiq_basic_parse(texts[i]);
-    if (!parsed) return;
-    ubiq_process_pipe(pipeVals, parsed);
-    ubiq_show_command_options(pipeVals, parsed);
-    ubiq_show_preview(parsed);
-}
-
-// Main loop, everything begins from here.
-function ubiq_keyup_handler(evt) {
-    // measure the input
-    CmdUtils.inputUpdateTime = performance.now();
-    var ubiq_input_changed = ubiq_save_input();
-
-    if (evt) {
-        var kc = evt.keyCode;
-
-        // On ENTER, execute the given command
-        if (kc == 13) {
-            ubiq_execute();
-            CmdUtils.closePopup();
-            return;
-        }
-
-        // On TAB, try to autocomplete command
-        else if (kc == 9) {
-            command = ubiq_complete_command();
-            if (command !== null) {
-                ubiq_input_el().value = command;
-                ubiq_input_changed = ubiq_save_input();
-            }
-            ubiq_focus();
-        }
-
-        // On F5 restart extension
-        else if (kc == 116) {
-            chrome.runtime.reload();
-            return;
-        }
-
-        // Ctrl+C copies preview to clipboard
-        else if (kc == 67 && evt.ctrlKey) {
-            backgroundPage.console.log("copy to clip");
-            var el = ubiq_preview_el();
-            if (!el) return;
-            CmdUtils.setClipboard( el.innerText );
-        }
-    }
-
-    if (ubiq_input_changed) {
-        ubiq_process_input();
-    }
-}
-
 async function ubiq_generate_output(parsed) {
     var cmd_struct = parsed._cmd;
 
@@ -443,8 +331,9 @@ async function ubiq_generate_output(parsed) {
         return {};
 }
 
-async function ubiq_show_preview(parsed) {
-    if (!parsed) return;
+async function ubiq_show_preview(parsed_promise) {
+    if (!parsed_promise) return;
+    parsed = await parsed_promise;
 
     var pblock = ubiq_preview_el();
 
@@ -489,6 +378,105 @@ async function ubiq_show_preview(parsed) {
             break;
     }
     return;
+}
+
+async function ubiq_execute(parsed_promise) {
+    if (!parsed_promise)
+        return;
+    var parsed = await parsed_promise;
+    var cmd_func = parsed._cmd.execute;
+
+    // Run command's "execute" function
+    try {
+        CmdUtils.deblog("executing [", parsed.cmd ,"] [", parsed.input ,"]");
+        cmd_func(parsed);
+        CmdUtils.closePopup();
+    } catch (e) {
+        CmdUtils.notify(e.toString(), "execute function error")
+        console.error(e.stack);
+        CmdUtils.backgroundWindow.error(e.stack);
+    }
+
+    return;
+}
+
+async function ubiq_process_input() {
+    var text = ubiq_command();
+    var texts = text.split('|').map(str => str.trim()).filter(str => str !== "");
+
+    var sel = null;
+    if (CmdUtils.active_tab) {
+        var s = CmdUtils.active_tab.selection.trim();
+        if (s !== "") sel = s;
+    }
+
+    var pipeVals = {};
+    for (var i = 0; i < texts.length - 1; i++) {
+        var t = texts[i];
+
+        if (sel) pipeVals["sel"] = sel;
+
+        var parsed = ubiq_basic_parse(t);
+        if (!parsed) return;
+        ubiq_process_pipe(pipeVals, parsed);
+
+        pipeVals = await ubiq_generate_output(parsed);
+    }
+    if (sel) pipeVals["sel"] = sel;
+
+    var parsed = ubiq_basic_parse(texts[i]);
+    if (!parsed) return;
+    ubiq_process_pipe(pipeVals, parsed);
+    ubiq_show_command_options(pipeVals, parsed);
+    return parsed;
+}
+
+// Main loop, everything begins from here.
+function ubiq_keyup_handler(evt) {
+    // measure the input
+    CmdUtils.inputUpdateTime = performance.now();
+    var ubiq_input_changed = ubiq_save_input();
+
+    if (evt) {
+        var kc = evt.keyCode;
+
+        // On ENTER, execute the given command
+        if (kc == 13) {
+            var parsed = ubiq_process_input();
+            ubiq_execute(parsed);
+            CmdUtils.closePopup();
+            return;
+        }
+
+        // On TAB, try to autocomplete command
+        else if (kc == 9) {
+            command = ubiq_complete_command();
+            if (command !== null) {
+                ubiq_input_el().value = command;
+                ubiq_input_changed = ubiq_save_input();
+            }
+            ubiq_focus();
+        }
+
+        // On F5 restart extension
+        else if (kc == 116) {
+            chrome.runtime.reload();
+            return;
+        }
+
+        // Ctrl+C copies preview to clipboard
+        else if (kc == 67 && evt.ctrlKey) {
+            backgroundPage.console.log("copy to clip");
+            var el = ubiq_preview_el();
+            if (!el) return;
+            CmdUtils.setClipboard( el.innerText );
+        }
+    }
+
+    if (ubiq_input_changed) {
+        var parsed = ubiq_process_input();
+        ubiq_show_preview(parsed);
+    }
 }
 
 function ubiq_save_input() {
