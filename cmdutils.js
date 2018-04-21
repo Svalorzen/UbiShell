@@ -302,7 +302,7 @@ CmdUtils.post = function post(url, data) {
 };
 
 // loads remote scripts into specified window (or backround if not specified)
-CmdUtils.loadScripts = function loadScripts(url, wnd=window) {
+CmdUtils.loadScripts = async function loadScripts(url, wnd=window) {
     // this array will hold all loaded scripts into this window
     wnd.loadedScripts = wnd.loadedScripts || [];
     url = url || [];
@@ -321,14 +321,15 @@ CmdUtils.loadScripts = function loadScripts(url, wnd=window) {
     }
 
     console.log("loading :::: ", thisurl);
-    wnd.jQuery.ajax({
-        url: thisurl,
-        dataType: 'script',
-        success: () => {
-            console.log("Loaded require :::", thisurl);
-            wnd.loadedScripts.push(thisurl);
-        }
-    });
+    try {
+        await wnd.jQuery.ajax({
+            url: thisurl,
+            dataType: 'script',
+        });
+        console.log("Loaded require :::", thisurl);
+        wnd.loadedScripts.push(thisurl);
+        return true;
+    } catch (e) {}
     return false;
 };
 

@@ -797,11 +797,10 @@ CmdUtils.CreateCommand({
         from: { type: "string" },
         to: { type: "string", def: "en" },
     },
-    execute: async function translate_execute(obj) {
-        if (obj.input.length === 0 || obj.input.length > MS_TRANSLATOR_LIMIT) {
-            pblock.innerHTML = "text is too short or too long<BR><BR>[" + text + "]";
-            return;
-        }
+    output: async function (obj) {
+        if (obj.input.length === 0 || obj.input.length > MS_TRANSLATOR_LIMIT)
+            return {};
+
         var T = await msTranslator("Translate", {
             contentType: "text/html",
             text: obj.input,
@@ -809,23 +808,16 @@ CmdUtils.CreateCommand({
             to: obj.to
         });
         if (T[0] === '"') T = T.split("").slice(1, -1).join("");
-        if (CmdUtils.setSelection(T)) {
-            CmdUtils.closePopup();
-        }
+        return {translation: T};
+    },
+    execute: async function translate_execute(obj) {
+        var T = await this.output(obj);
+        CmdUtils.setSelection(T);
     },
     preview: async function translate_preview(pblock, obj) {
-        if (obj.input.length === 0 || obj.input.length > MS_TRANSLATOR_LIMIT) {
-            pblock.innerHTML = "text is too short or too long<BR><BR>[" + obj.input + "]";
-            return;
-        }
-        var T = await msTranslator("Translate", {
-            contentType: "text/html",
-            text: obj.input,
-            from: obj.from || "",
-            to: obj.to
-        });
-        if (T[0] === '"') T = T.split("").slice(1, -1).join("");
-        CmdUtils.setPreview(T);
+        var T = await this.output(obj);
+        if ("translation" in T)
+            pblock.innerHTML = T.translation;
     },
 });
 
@@ -853,7 +845,6 @@ CmdUtils.CreateCommand({
         pblock.innerHTML = "Search old versions of the site <b>" + obj.input + "</b>";
     },
     execute: function (directObj) {
-        CmdUtils.closePopup();
         var url = directObj.input;
         if (!url) url = CmdUtils.getLocation();
         var wayback_machine = "http://web.archive.org/web/*/" + url;

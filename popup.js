@@ -43,7 +43,7 @@ function ubiq_clear() {
 }
 
 // shows preview for command, cmd is command index
-function ubiq_show_preview(parsed) {
+async function ubiq_show_preview(parsed) {
     if (!parsed) return;
 
     var cmd_struct = parsed._cmd;
@@ -72,16 +72,19 @@ function ubiq_show_preview(parsed) {
             }
         }
 
-        var result = true;
-        if (typeof cmd_struct.require !== 'undefined')
-            result = result && CmdUtils.loadScripts(cmd_struct.require);
-        if (result && typeof cmd_struct.requirePopup !== 'undefined')
-            result = result && CmdUtils.loadScripts( cmd_struct.requirePopup, window );
+        var resultRequire = true;
+        var resultRequirePopup = true;
 
+        if (typeof cmd_struct.require !== 'undefined')
+            resultRequire = CmdUtils.loadScripts(cmd_struct.require);
+        if (typeof cmd_struct.requirePopup !== 'undefined')
+            resultRequirePopup = CmdUtils.loadScripts( cmd_struct.requirePopup, window );
+
+        var result = await resultRequire && await resultRequirePopup;
         if (result)
             pfunc();
         else
-            ubiq_set_preview("Some scripts are being loaded...");
+            ubiq_set_preview("Failed to load some scripts...");
     }
     return;
 }
@@ -284,6 +287,7 @@ function ubiq_execute() {
     try {
         CmdUtils.deblog("executing [", directObj.cmd ,"] [", directObj.input ,"]");
         cmd_func(directObj);
+        CmdUtils.closePopup();
     } catch (e) {
         CmdUtils.notify(e.toString(), "execute function error")
         console.error(e.stack);
@@ -591,6 +595,37 @@ function ubiq_show_matching_commands(text) {
     return;
 }
 
+async function ubiq_process_input() {
+    var text = ubiq_command();
+    var texts = text.split('|').map(str => str.trim()).filter(str => str !== "");
+
+    var sel = null;
+    if (CmdUtils.active_tab) {
+        var s = CmdUtils.active_tab.selection.trim();
+        if (s !== "") sel = s;
+    }
+
+    var pipeVals = {};
+    for (var i = 0; i < texts.length - 1; i++) {
+        var t = texts[i];
+
+        if (sel) pipeVals["sel"] = sel;
+
+        var parsed = ubiq_basic_parse(t);
+        if (!parsed) return;
+        ubiq_process_pipe(pipeVals, parsed);
+
+        pipeVals = await ubiq_generate_output(parsed);
+    }
+    if (sel) pipeVals["sel"] = sel;
+
+    var parsed = ubiq_basic_parse(texts[i]);
+    if (!parsed) return;
+    ubiq_process_pipe(pipeVals, parsed);
+    ubiq_show_command_options(pipeVals, parsed);
+    ubiq_show_preview(parsed);
+}
+
 function ubiq_keyup_handler(evt) {
     // measure the input
     CmdUtils.inputUpdateTime = performance.now();
@@ -634,47 +669,25 @@ function ubiq_keyup_handler(evt) {
     }
 
     if (ubiq_input_changed) {
-        var text = ubiq_command();
-        var texts = text.split('|').map(str => str.trim()).filter(str => str !== "");
-
-        var sel = null;
-        if (CmdUtils.active_tab) {
-            var s = CmdUtils.active_tab.selection.trim();
-            if (s !== "") sel = s;
-        }
-
-        var pipeVals = {};
-        for (var i = 0; i < texts.length - 1; i++) {
-            var t = texts[i];
-
-            if (sel) pipeVals["sel"] = sel;
-
-            var parsed = ubiq_basic_parse(t);
-            if (!parsed) return;
-            ubiq_process_pipe(pipeVals, parsed);
-
-            pipeVals = ubiq_generate_output(parsed);
-        }
-        if (sel) pipeVals["sel"] = sel;
-
-        var parsed = ubiq_basic_parse(texts[i]);
-        if (!parsed) return;
-        ubiq_process_pipe(pipeVals, parsed);
-        ubiq_show_command_options(pipeVals, parsed);
-        ubiq_show_preview(parsed);
+        ubiq_process_input();
     }
 }
 
-function ubiq_generate_output(parsed) {
-    var result = true;
+async function ubiq_generate_output(parsed) {
     var cmd_struct = parsed._cmd;
+
+    var resultRequire = true;
+    var resultRequirePopup = true;
+
     if (typeof cmd_struct.require !== 'undefined')
-        result = result && CmdUtils.loadScripts(cmd_struct.require);
-    if (result && typeof cmd_struct.requirePopup !== 'undefined')
-        result = result && CmdUtils.loadScripts( cmd_struct.requirePopup, window );
+        resultRequire = CmdUtils.loadScripts(cmd_struct.require);
+    if (typeof cmd_struct.requirePopup !== 'undefined')
+        resultRequirePopup = CmdUtils.loadScripts( cmd_struct.requirePopup, window );
+
+    var result = await resultRequire && await resultRequirePopup;
 
     if (result)
-        return cmd_struct.output(parsed);
+        return await cmd_struct.output(parsed);
     else
         return {};
 }
