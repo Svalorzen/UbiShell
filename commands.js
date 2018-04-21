@@ -502,7 +502,7 @@ CmdUtils.CreateCommand({
 
 CmdUtils.CreateCommand({
     name: "transform",
-    description: "Transform input option keys and pass along all options.",
+    description: "Transform input option keys and pass along options.",
     help: '\
         join: "key;join_string"\
         none: "key"\
