@@ -12,7 +12,6 @@ if (!CmdUtils) var CmdUtils = {
     active_tab: null,   // tab that is currently active, updated via background.js
     pageData: "",   // currently selected text, update via content script selection.js
     setPreview: function setPreview(message, prepend) { console.log(message); },
-    setResult: function setResult(message, prepend) { console.log(message); },
 };
 
 // debug log
