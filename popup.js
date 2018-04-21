@@ -228,30 +228,6 @@ function ubiq_html_encode(text) {
     return ubiq_html_encoder.html(text).text();
 }
 
-function ubiq_complete_command(text) {
-    if (!text) text = ubiq_command();
-
-    var words = text.split(' ');
-    if (words.length > 1) return null;
-
-    var command = words[0];
-    if (command.length == 0) return null;
-
-    matches = [];
-    for (var c in CmdUtils.CommandList) {
-        var cmdnames = CmdUtils.CommandList[c].names;
-        for (var cmd of cmdnames)
-            if (cmd.startsWith(command))
-                matches.push(cmd);
-    }
-
-    if (matches.length == 0) return null;
-    if (matches.length == 1) return matches[0];
-
-    ubiq_set_preview(matches.join(', '));
-    return null;
-}
-
 function ubiq_show_command_options(pipeVals, parsed) {
     function markValue(v) {
         var str;
@@ -331,9 +307,15 @@ async function ubiq_generate_output(parsed) {
         return {};
 }
 
-async function ubiq_show_preview(parsed_promise) {
-    if (!parsed_promise) return;
-    parsed = await parsed_promise;
+async function ubiq_show_preview(promise) {
+    if (!promise) return;
+    var processed = await promise;
+    if (!processed) return;
+
+    var parsed = processed.parsed;
+    var pipeVals = processed.pipe;
+
+    ubiq_show_command_options(pipeVals, parsed);
 
     var pblock = ubiq_preview_el();
 
@@ -380,10 +362,11 @@ async function ubiq_show_preview(parsed_promise) {
     return;
 }
 
-async function ubiq_execute(parsed_promise) {
-    if (!parsed_promise)
-        return;
-    var parsed = await parsed_promise;
+async function ubiq_execute(promise) {
+    if (!promise) return;
+    var processed = await promise;
+
+    var parsed = processed.parsed;
     var cmd_func = parsed._cmd.execute;
 
     // Run command's "execute" function
@@ -427,9 +410,74 @@ async function ubiq_process_input() {
     var parsed = ubiq_basic_parse(texts[i]);
     if (!parsed) return;
     ubiq_process_pipe(pipeVals, parsed);
-    ubiq_show_command_options(pipeVals, parsed);
-    return parsed;
+    return {pipe: pipeVals, parsed: parsed};
 }
+
+function ubiq_autocomplete(text) {
+    if (!text) text = ubiq_command();
+    if (text.length === 0) return null;
+    if (text[text.length - 1] === ' ') return null;
+
+    // We only consider the last command to autocomplete
+    var texts = text.split('|').map(str => str.trim()).filter(str => str !== "");
+    if (texts.length == 0) return null;
+
+    var lastCommand = texts[texts.length - 1];
+
+    var words = lastCommand.split(' ');
+    if (words.length == 0) return null;
+
+    // This is the last typed word, and we have to understand what it is.
+    var lastWord = words[words.length - 1];
+    if (lastWord.length == 0) return null;
+
+    var matches = [];
+
+    // Here it's probably a command name.
+    if (words.length == 1) {
+        var command = lastWord;
+
+        for (var c in CmdUtils.CommandList) {
+            var cmdnames = CmdUtils.CommandList[c].names;
+            for (var cmd of cmdnames)
+                if (cmd.startsWith(command))
+                    matches.push(cmd);
+        }
+    }
+
+    // Here it's probably an option.
+    else if (lastWord[0] === '-') {
+        var parsed = ubiq_basic_parse(lastCommand);
+        if (!parsed) return;
+
+        matches = [];
+
+        var option = lastWord.substr(1);
+        for (var opt in parsed._cmd["options"])
+            if (opt.startsWith(option))
+                matches.push('-' + opt);
+    }
+
+    // Here is probably a pipe value.
+    else if (lastWord[0] === '{') {
+        // To do this we'd have to run the whole command.. maybe this is
+        // overkill for now, but the possibility exist.
+        //
+        // In the future we should cache pipe results, so it should be easier
+        // to do this.
+    }
+
+    if (matches.length == 0) return null;
+    if (matches.length == 1) {
+        // Replace match in loco
+        var lastSpaceId = text.lastIndexOf(' ');
+        return text.substr(0, lastSpaceId + 1) + matches[0];
+    }
+
+    ubiq_set_preview(matches.join(', '));
+    return null;
+}
+
 
 // Main loop, everything begins from here.
 function ubiq_keyup_handler(evt) {
@@ -442,17 +490,19 @@ function ubiq_keyup_handler(evt) {
 
         // On ENTER, execute the given command
         if (kc == 13) {
-            var parsed = ubiq_process_input();
-            ubiq_execute(parsed);
-            CmdUtils.closePopup();
-            return;
+            var processed = ubiq_process_input();
+            if (processed) {
+                ubiq_execute(processed);
+                CmdUtils.closePopup();
+                return;
+            }
         }
 
         // On TAB, try to autocomplete command
         else if (kc == 9) {
-            command = ubiq_complete_command();
-            if (command !== null) {
-                ubiq_input_el().value = command;
+            var new_input = ubiq_autocomplete();
+            if (new_input !== null) {
+                ubiq_input_el().value = new_input;
                 ubiq_input_changed = ubiq_save_input();
             }
             ubiq_focus();
@@ -474,8 +524,8 @@ function ubiq_keyup_handler(evt) {
     }
 
     if (ubiq_input_changed) {
-        var parsed = ubiq_process_input();
-        ubiq_show_preview(parsed);
+        var processed = ubiq_process_input();
+        ubiq_show_preview(processed);
     }
 }
 
