@@ -489,7 +489,6 @@ CmdUtils.CreateCommand({
         }
         search = search.replace("***", "\\b(\\w*)\\b");
         search = search.replace("___", "\\b(.*)\\b");
-        var text = doc.replace(/&nbsp;/g, ' ');
         try {
             var regex = new RegExp(search, "gi");
         } catch (e) {
@@ -498,11 +497,12 @@ CmdUtils.CreateCommand({
         var matches = [];
         var match;
         var counter = 50;
-        while ((counter-- > 0) && (match = regex.exec(text))) {
+        while ((counter-- > 0) && (match = regex.exec(doc))) {
             if (match.length == 1)
                 match = match[0];
             else
                 match = match[1];
+            console.log(match.charCodeAt(0));
             if (match != "")
                 matches.push(match);
         }
