@@ -15,14 +15,14 @@
     "background": {
         "scripts": [
             "lib/jquery-3.3.1.min.js",
-            "lib/jshint-2.9.5.js",
-            "lib/codemirror-5.37.0/searchcursor.js",
-            "lib/codemirror-5.37.0/javascript-lint.js",
+            "lib/codemirror-5.37.0/codemirror.js",
             "lib/codemirror-5.37.0/javascript.js",
             "lib/codemirror-5.37.0/matchbrackets.js",
             "lib/codemirror-5.37.0/search.js",
-            "lib/codemirror-5.37.0/codemirror.js",
+            "lib/codemirror-5.37.0/searchcursor.js",
             "lib/codemirror-5.37.0/lint.js",
+            "lib/codemirror-5.37.0/javascript-lint.js",
+            "lib/jshint-2.9.5.js",
             "utils.js", "cmdutils.js", "commands.js"
         ]
     },
