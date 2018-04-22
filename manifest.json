@@ -8,12 +8,12 @@
     "short_name": "UbiShell",
     "homepage_url": "https://github.com/svalorzen/UbiShell",
     "author": "svalorzen",
-    "version": "0.1.0.5",
+    "version": "0.1.1",
     "description": "Revived Ubiquity as a Shell",
     "content_security_policy": "script-src 'self' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com; object-src 'self'",
     "manifest_version": 2,
     "background": {
-        "scripts": ["lib/jquery-2.2.4.min.js", "utils.js", "cmdutils.js", "commands.js"]
+        "scripts": ["lib/jquery-3.3.1.min.js", "utils.js", "cmdutils.js", "commands.js"]
     },
     "browser_action": {
         "default_title": "UbiShell",
