@@ -30,12 +30,15 @@ Installation
 
 As it is based on WebExtensions, UbiShell supports both Chrome and Firefox.
 
-This version of the addon has not yet been published, so you'll have to load it
-as a developer extension at the moment. You can do it by following the
+- [Install for Chrome](https://chrome.google.com/webstore/detail/ubishell/adjgkmlohcjiomjdocdholgkcadbkkam)
+- [Install for Firefox](https://addons.mozilla.org/en-US/firefox/addon/ubishell/)
+
+If you want to try out the latest version directly from this repository, you'll
+have to install this extension as a temporary developer addon. You can find the
 instructions below.
 
-- [Install for Chrome](https://developer.chrome.com/extensions/getstarted)
-- [Install for Firefox](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Temporary_Installation_in_Firefox)
+- [Install from this Repository for Chrome](https://developer.chrome.com/extensions/getstarted)
+- [Install from this Repository for Firefox](https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Temporary_Installation_in_Firefox)
 
 License
 =======
