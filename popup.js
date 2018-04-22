@@ -28,7 +28,13 @@ function ubiq_set_result(v) {
 
 function ubiq_focus() {
     el = ubiq_input_el();
-    setTimeout("el.focus()", 50);
+    setTimeout(() => {
+        el.focus();
+        // Set the cursor at the end without selecting everything.
+        var v = el.value;
+        el.value = '';
+        el.value = v;
+    }, 50);
 }
 
 function ubiq_command() {
